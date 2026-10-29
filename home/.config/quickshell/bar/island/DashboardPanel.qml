@@ -185,6 +185,7 @@ FocusScope {
                         spacing: 14
 
                         WeatherIcon {
+                            name: WeatherService.available ? WeatherService.icon : ""
                             glyph: WeatherService.available ? WeatherService.glyph : ""
                             size: 50
                         }
@@ -235,6 +236,7 @@ FocusScope {
 
                                 WeatherIcon {
                                     Layout.alignment: Qt.AlignHCenter
+                                    name: modelData.icon ?? ""
                                     glyph: modelData.glyph
                                     size: 26
                                 }
@@ -591,6 +593,7 @@ FocusScope {
                             spacing: 12
 
                             WeatherIcon {
+                                name: WeatherService.available ? WeatherService.icon : ""
                                 glyph: WeatherService.available ? WeatherService.glyph : ""
                                 size: 64
                             }
@@ -703,6 +706,7 @@ FocusScope {
 
                             WeatherIcon {
                                 Layout.alignment: Qt.AlignHCenter
+                                name: modelData.icon ?? ""
                                 glyph: modelData.glyph
                                 size: 28
                             }
