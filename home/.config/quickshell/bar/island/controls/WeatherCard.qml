@@ -30,8 +30,18 @@ Card {
     readonly property bool beside: root.cols >= 4 && root.rows <= 2
     readonly property bool showAhead: !root.oneLine && (root.rows >= 3 || root.beside)
 
+    // A tap opens the weather: the dashboard's tab, or the weather card.
+    signal panelRequested(string panel)
+
     Component.onCompleted: WeatherService.subscribe()
     Component.onDestruction: WeatherService.release()
+
+    HoverHandler { cursorShape: Qt.PointingHandCursor }
+
+    TapHandler {
+        gesturePolicy: TapHandler.ReleaseWithinBounds
+        onTapped: root.panelRequested("weather")
+    }
 
     // ── LINE ────────────────────────────────────────────────────────────────
 

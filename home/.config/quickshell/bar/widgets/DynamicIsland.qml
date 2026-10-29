@@ -82,6 +82,8 @@ Rectangle {
 
     // The dashboard's height follows its tab (`DashboardPanel.heightWanted`).
     property int dashboardHeight: 560
+    // The tab the dashboard opens on ("overview", "monitor", "system", "weather"), or "".
+    property string dashboardStart: ""
 
     // ── PANEL SIZES ─────────────────────────────────────────────────────────
     //
@@ -228,6 +230,17 @@ Rectangle {
         // Only the live island answers, as `IslandState` enforces.
         if (!root.active)
             return
+        // A card in the island asking for its piece's detail: the weather opens
+        // the dashboard's tab when that is the statistics design.
+        if (panel === "media" || panel === "weather") {
+            if (panel === "weather" && SettingsService.statsDesign === "dashboard") {
+                root.dashboardStart = "weather"
+                panel = "stats"
+            } else {
+                ModuleService.activate(panel)
+                return
+            }
+        }
         // Whatever the drawers hold, the island takes over.
         DrawerService.closeAll()
         if (panel === "launcher" && root.launcherInDrawer) {
@@ -684,7 +697,13 @@ Rectangle {
             onClosed: root.close()
             onPanelRequested: panel => root.open(panel)
             onHeightWanted: height => root.dashboardHeight = height
-            Component.onCompleted: root.dashboardHeight = wanted
+            Component.onCompleted: {
+                const start = ["overview", "monitor", "system", "weather"].indexOf(root.dashboardStart)
+                if (start >= 0)
+                    tab = start
+                root.dashboardStart = ""
+                root.dashboardHeight = wanted
+            }
         }
     }
 
