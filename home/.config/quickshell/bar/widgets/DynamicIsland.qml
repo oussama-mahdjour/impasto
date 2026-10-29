@@ -230,6 +230,11 @@ Rectangle {
         // Only the live island answers, as `IslandState` enforces.
         if (!root.active)
             return
+        // "dashboard:weather" opens the dashboard on that tab.
+        if (panel.startsWith("dashboard:")) {
+            root.dashboardStart = panel.slice("dashboard:".length)
+            panel = "stats"
+        }
         // A card in the island asking for its piece's detail: the weather opens
         // the dashboard's tab when that is the statistics design.
         if (panel === "media" || panel === "weather") {
