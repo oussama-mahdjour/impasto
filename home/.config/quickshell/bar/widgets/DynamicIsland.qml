@@ -142,7 +142,7 @@ Rectangle {
         summary:      { width: ModuleService.summaryWidth,
                         height: ModuleService.summaryHeight,
                         padding: 0 },
-        osd:          { width: 260, height: Theme.capsuleHeight, padding: 10 },
+        osd:          { width: 320, height: Theme.capsuleHeight, padding: 10 },
         // Taller when the notification brings buttons.
         notification: { width: NotificationService.toastWidth,
                         height: NotificationService.toastHeight,
