@@ -143,6 +143,12 @@ QtObject {
         return monitor?.specialWorkspace?.name ?? ""
     }
 
+    // Whether the overview has anything to show for the special workspaces:
+    // one is open on this screen, or some window sits in one.
+    function specialShown(monitorName: string): bool {
+        return root.specialOn(monitorName) !== "" || root.specialClients.length > 0
+    }
+
     // The screen a workspace is on, or "" for one nobody has made yet.
     function monitorOf(workspaceId: int): string {
         const found = root.named.find(workspace => workspace.id === workspaceId)

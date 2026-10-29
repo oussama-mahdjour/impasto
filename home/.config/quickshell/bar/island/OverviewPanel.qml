@@ -610,6 +610,9 @@ ColumnLayout {
     Rectangle {
         id: specialStrip
 
+        // Drawn only when there is something to show, so the overview is
+        // as it was for anyone who never uses a special workspace.
+        visible: HyprlandService.specialShown(root.screenName)
         Layout.fillWidth: true
         Layout.fillHeight: false
         Layout.preferredHeight: 52
