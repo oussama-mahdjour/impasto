@@ -95,9 +95,7 @@ Singleton {
     readonly property var classIcons: [
         { match: /spotify/i, icon: "spotify-client" },
         { match: /^com\.anthropic\.Claude$/i, icon: "claude-desktop" },
-        { match: /calendar\.google\.com/i, icon: "calendar" },
-        // local (not for the PR): the class of the user's scratchpad terminal.
-        { match: /^griffin-term$/i, icon: "kitty" }
+        { match: /calendar\.google\.com/i, icon: "calendar" }
     ]
 
     // Never empty: a window with no icon of its own gets the generic one.
