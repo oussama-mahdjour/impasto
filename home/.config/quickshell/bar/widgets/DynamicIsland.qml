@@ -89,6 +89,7 @@ Rectangle {
         appearance: root.appearanceSize,
         palette:    root.appearanceSize,
         stats:      { width: 940,  height: 614 },
+        dashboard:  { width: 940,  height: 614 },
         // Depends on the results when `launcherFits` is on.
         launcher:   { width: LauncherService.panelWidth,
                       height: LauncherService.panelHeight },
@@ -191,6 +192,7 @@ Rectangle {
         brightness: brightnessDetail,
         bluetooth: bluetoothDetail,
         stats: statsPanel,
+        dashboard: dashboardPanel,
         overview: overviewPanel,
         session: sessionPanel,
         auth: authPanel,
@@ -213,6 +215,12 @@ Rectangle {
     // another design they open the drawer from the bottom edge instead.
     readonly property bool launcherInDrawer: SettingsService.launcherDesign !== "island"
 
+    // The stats panel is one of two designs (`statsDesign`); everything that
+    // opens it, by key, button or IPC, asks for "stats".
+    function resolve(panel: string): string {
+        return panel === "stats" && SettingsService.statsDesign === "dashboard" ? "dashboard" : panel
+    }
+
     function open(panel: string): void {
         // Only the live island answers, as `IslandState` enforces.
         if (!root.active)
@@ -224,7 +232,7 @@ Rectangle {
             DrawerService.openLauncher(DrawerService.designMode, "")
             return
         }
-        islandState.open(panel)
+        islandState.open(root.resolve(panel))
     }
 
     function close(): void {
@@ -241,7 +249,7 @@ Rectangle {
             }
             return
         }
-        if (islandState.openPanel === panel)
+        if (islandState.openPanel === root.resolve(panel))
             root.close()
         else
             root.open(panel)
@@ -665,6 +673,14 @@ Rectangle {
     Component {
         id: statsPanel
         StatsPanel { onClosed: root.close() }
+    }
+
+    Component {
+        id: dashboardPanel
+        DashboardPanel {
+            onClosed: root.close()
+            onPanelRequested: panel => root.open(panel)
+        }
     }
 
     Component {
