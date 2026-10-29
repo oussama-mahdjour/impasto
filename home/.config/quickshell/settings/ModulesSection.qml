@@ -136,6 +136,23 @@ SettingsSection {
     }
 
     SettingGroup {
+        title: Tr.t("Media card")
+        note: Tr.t("The player in the control centre.")
+        hint: Tr.t("The bars come from cava, which listens to the sound only while the card is open. Without cava installed the cover stays plain.")
+
+        SettingRow {
+            label: Tr.t("Ring around the cover")
+            reading: SettingsService.mediaRing
+                ? Tr.t("Bars move around a round cover with the music") : Tr.t("Plain cover")
+
+            ToggleSwitch {
+                checked: SettingsService.mediaRing
+                onToggled: checked => SettingsService.set("mediaRing", checked)
+            }
+        }
+    }
+
+    SettingGroup {
         title: Tr.t("Notes")
         note: Tr.t("A note on the wallpaper is written the same way as one in the panel.")
 

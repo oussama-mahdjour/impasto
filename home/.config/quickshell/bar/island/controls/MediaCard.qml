@@ -40,31 +40,44 @@ Card {
             Layout.fillWidth: true
             spacing: 12
 
-            ClippingRectangle {
+            Item {
                 Layout.preferredWidth: 58
                 Layout.preferredHeight: 58
-                radius: width * Theme.pictureCorner
-                // None behind a picture: a player may send its logo on transparency.
-                color: art.visible ? "transparent" : Theme.surfaceHoverIn(QsWindow.window)
 
-                Image {
-                    id: art
+                // Bars around the cover, in the card's padding.
+                CoverRing {
+                    id: ring
                     anchors.fill: parent
-                    source: MediaService.artUrl
-                    visible: source != "" && status === Image.Ready
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    sourceSize.width: 116
-                    sourceSize.height: 116
+                    active: SettingsService.mediaRing
+                    innerRadius: parent.width / 2 + 3
                 }
 
-                Text {
-                    anchors.centerIn: parent
-                    visible: !art.visible
-                    text: "󰎇"
-                    font.family: Theme.fontMono
-                    font.pixelSize: 22
-                    color: Theme.accent
+                ClippingRectangle {
+                    anchors.fill: parent
+                    // Round inside a ring.
+                    radius: ring.shown ? width / 2 : width * Theme.pictureCorner
+                    // None behind a picture: a player may send its logo on transparency.
+                    color: art.visible ? "transparent" : Theme.surfaceHoverIn(QsWindow.window)
+
+                    Image {
+                        id: art
+                        anchors.fill: parent
+                        source: MediaService.artUrl
+                        visible: source != "" && status === Image.Ready
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                        sourceSize.width: 116
+                        sourceSize.height: 116
+                    }
+
+                    Text {
+                        anchors.centerIn: parent
+                        visible: !art.visible
+                        text: "󰎇"
+                        font.family: Theme.fontMono
+                        font.pixelSize: 22
+                        color: Theme.accent
+                    }
                 }
             }
 
