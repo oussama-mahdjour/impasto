@@ -84,6 +84,39 @@ Singleton {
         return root.formatBytes(bytesPerSecond, true)
     }
 
+    // `{ name, address }` per interface with a global IPv4 address, read at
+    // start and whenever the connection changes, so a card that lists them is
+    // sized before it opens. Container and virtual interfaces are left out.
+    property var addresses: []
+
+    function refreshAddresses(): void {
+        addressProcess.running = true
+    }
+
+    Component.onCompleted: root.refreshAddresses()
+
+    Connections {
+        target: NetworkService
+
+        function onConnectionNameChanged(): void {
+            root.refreshAddresses()
+        }
+    }
+
+    Process {
+        id: addressProcess
+
+        command: ["ip", "-4", "-o", "addr", "show", "scope", "global"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.addresses = text.trim().split("\n").filter(line => line !== "").map(line => {
+                    const fields = line.trim().split(/\s+/)
+                    return { name: fields[1], address: fields[3] }
+                }).filter(entry => !/^(docker|br-|veth)/.test(entry.name))
+            }
+        }
+    }
+
     Timer {
         interval: root.interval
         repeat: true

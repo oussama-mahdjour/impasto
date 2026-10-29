@@ -47,7 +47,7 @@ Singleton {
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "brightness",    name: "Brightness",    bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(1, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(4, 116) },
+        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, 76) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "notifications", name: "Notifications", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(7, 0) },
         { id: "weather",       name: "Weather",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(0, 50) },
@@ -273,6 +273,8 @@ Singleton {
             return PetService.hatched ? `Lv ${PetService.level}` : "Egg"
         case "network":
             return NetworkService.connectionName
+        case "netspeed":
+            return `↓ ${StatsService.rate(StatsService.networkDown)}  ↑ ${StatsService.rate(StatsService.networkUp)}`
         case "bluetooth":
             return BluetoothService.summary
         case "calendar":
@@ -492,6 +494,19 @@ Singleton {
         root.openHost = ""
     }
 
+    // How many lines the network's name takes in the speed card, which wraps it
+    // (at most three). Measured at the card's own type and inner width.
+    readonly property FontMetrics netNameMetrics: FontMetrics {
+        font.family: Theme.fontFamily
+        font.pixelSize: Theme.fontSizeRegular
+        font.weight: Font.DemiBold
+    }
+
+    function netNameLines(): int {
+        const room = Theme.cardWidth - 2 * (Theme.cardInset + Theme.cardPadding)
+        return Math.max(1, Math.min(3, Math.ceil(root.netNameMetrics.advanceWidth(NetworkService.connectionName) / (0.9 * room))))
+    }
+
     // The catalogue size, except network and Bluetooth, which open the
     // control centre's lists, an empty notification list, which is short,
     // and the cards whose rows come and go, sized from their count.
@@ -499,6 +514,11 @@ Singleton {
         if (id === "network" || id === "bluetooth")
             return { width: 420, height: 500 }
         const item = root.entry(id)
+        // The name's lines, a line per interface, the totals and the graph.
+        if (id === "netspeed")
+            return { width: item.width,
+                     height: Theme.cardHeight(2 + Math.max(1, SystemMonitorService.addresses.length),
+                                              76 + (root.netNameLines() - 1) * 17) }
         if (id === "notifications")
             return { width: item.width,
                      height: Theme.cardHeight(Math.min(6, NotificationService.history.length) + 1, 0) }
@@ -587,6 +607,9 @@ Singleton {
             // A desktop has no backlight, the way it has no battery.
             return BrightnessService.available
         case "netspeed":
+            // Reading the addresses builds the service, which lists the
+            // interfaces the card is sized from.
+            return SystemMonitorService.addresses !== undefined
         case "network":
             // Disconnected is still a reading.
             return true

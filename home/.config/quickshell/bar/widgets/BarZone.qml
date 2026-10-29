@@ -15,8 +15,8 @@ import "../../theme"
 import "../../services"
 import "../../components"
 
-// One side of the bar: the layout's ids drawn as capsules. The workspaces, the
-// network speed and the tray get a capsule of their own; everything else shares one until a
+// One side of the bar: the layout's ids drawn as capsules. The workspaces and
+// the tray get a capsule of their own; everything else shares one until a
 // `split` starts the next. A capsule holding a single item takes that item's shape
 // (`BarChip.alone`). Clicks open in the island (`Bar.qml`).
 Row {
@@ -42,7 +42,7 @@ Row {
         for (const item of root.entries) {
             if (item.id === "split") {
                 flush()
-            } else if (item.id === "workspaces" || item.id === "tray" || item.id === "netspeed") {
+            } else if (item.id === "workspaces" || item.id === "tray") {
                 flush()
                 out.push({ kind: item.id, items: [] })
             } else {
@@ -80,9 +80,8 @@ Row {
 
         readonly property bool workspaces: group.kind === "workspaces"
         readonly property bool tray: group.kind === "tray"
-        readonly property bool netspeed: group.kind === "netspeed"
         // A capsule drawn by its own widget rather than of chips.
-        readonly property bool own: group.workspaces || group.tray || group.netspeed
+        readonly property bool own: group.workspaces || group.tray
 
         // The items this machine has. A capsule with none (no battery, no
         // backlight on a desktop) is not drawn.
@@ -106,8 +105,8 @@ Row {
         readonly property int pad: group.chromeless || group.alone ? 0 : 4
 
         // The tray with no icons in it is not drawn.
-        visible: group.workspaces || group.netspeed || (group.tray ? TrayService.items.length > 0
-                                                                   : group.present.length > 0)
+        visible: group.workspaces || (group.tray ? TrayService.items.length > 0
+                                                 : group.present.length > 0)
         width: group.own
             ? (strip.item ? strip.item.implicitWidth : 0)
             : chips.implicitWidth + 2 * group.pad
@@ -182,7 +181,7 @@ Row {
             id: strip
 
             active: group.own
-            sourceComponent: group.tray ? trayCapsule : group.netspeed ? netSpeed : workspaceStrip
+            sourceComponent: group.tray ? trayCapsule : workspaceStrip
         }
 
         Component {
@@ -191,11 +190,6 @@ Row {
                 chromeless: group.chromeless
                 overWallpaper: group.overWallpaper
             }
-        }
-
-        Component {
-            id: netSpeed
-            NetSpeed { chromeless: group.chromeless }
         }
 
         Component {

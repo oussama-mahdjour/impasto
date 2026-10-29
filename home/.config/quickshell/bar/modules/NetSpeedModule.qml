@@ -1,63 +1,45 @@
 // ╭──────────────────────────────────────────────────────────────────────────╮
 // │                                                                          │
 // │   N E T   S P E E D   M O D U L E                                        │
-// │   the connection in detail · rates, signal, address, totals              │
+// │   the connection in detail · speeds, name, addresses, totals, graph      │
 // │                                                                          │
 // │   github.com/andreumassanet/impasto                                      │
 // │                                                                          │
 // ╰──────────────────────────────────────────────────────────────────────────╯
 
-// The network in detail, opened from the speed on the bar, as the battery
-// opens its: what carries the traffic, its signal
-// and address, the rates now with the last minutes drawn, and the totals
-// since boot (SystemMonitorService). The button goes to the Wi-Fi page.
-
 import QtQuick
 import QtQuick.Layouts
-import Quickshell.Io
 
 import "../../theme"
 import "../../services"
 import "../../components"
 
+// The network in detail, opened from the speed on the bar. The heading is the
+// speed now, down and up, with the Wi-Fi signal beside it. Under it the
+// network's name, which wraps so a long one keeps its room; a line for each
+// interface that has an address; the totals since boot; and the last minutes
+// drawn (`StatsService`). The card's height is declared in
+// `ModuleService.openSize`, so a row added here is counted there.
 Item {
     id: root
 
     property bool compact: false
-
-    // `interface address/prefix` per line, read on open.
-    property var addresses: []
 
     implicitWidth: card.implicitWidth
     implicitHeight: card.implicitHeight
 
     Component.onCompleted: {
         SystemMonitorService.subscribe()
-        addressReader.running = true
+        SystemMonitorService.refreshAddresses()
     }
     Component.onDestruction: SystemMonitorService.release()
-
-    Process {
-        id: addressReader
-
-        command: ["ip", "-4", "-o", "addr", "show", "scope", "global"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.addresses = text.trim().split("\n").filter(line => line !== "").map(line => {
-                    const fields = line.trim().split(/\s+/)
-                    return `${fields[1]}  ${fields[3]}`
-                }).filter(line => !line.startsWith("docker") && !line.startsWith("br-") && !line.startsWith("veth"))
-            }
-        }
-    }
 
     ModuleCard {
         id: card
 
         anchors.fill: parent
-        title: NetworkService.connectionName
-        subtitle: NetworkService.stateLine
-        figure: `↓ ${StatsService.rate(StatsService.networkDown)}`
+        title: `↓ ${StatsService.rate(StatsService.networkDown)}   ↑ ${StatsService.rate(StatsService.networkUp)}`
+        figure: NetworkService.wifiConnected ? `${Math.round(NetworkService.strength * 100)}%` : ""
 
         mark: Text {
             anchors.centerIn: parent
@@ -67,20 +49,33 @@ Item {
             color: Theme.indicator
         }
 
-        CardFact {
-            name: "Up"
-            value: StatsService.rate(StatsService.networkUp)
+        Text {
+            Layout.fillWidth: true
+            text: NetworkService.connectionName
+            wrapMode: Text.Wrap
+            maximumLineCount: 3
+            elide: Text.ElideRight
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSizeRegular
+            font.weight: Font.DemiBold
+            color: Theme.text
+        }
+
+        Repeater {
+            model: SystemMonitorService.addresses
+
+            CardFact {
+                required property var modelData
+
+                name: modelData.name
+                value: modelData.address
+            }
         }
 
         CardFact {
-            visible: NetworkService.wifiConnected
-            name: "Signal"
-            value: `${Math.round(NetworkService.strength * 100)} %`
-        }
-
-        CardFact {
+            visible: SystemMonitorService.addresses.length === 0
             name: "Address"
-            value: root.addresses.length > 0 ? root.addresses.join(" · ") : "—"
+            value: "—"
         }
 
         CardFact {
@@ -113,13 +108,6 @@ Item {
                 stroke: Theme.textMuted
                 showDot: false
             }
-        }
-
-        PillButton {
-            Layout.topMargin: 4
-            Layout.alignment: Qt.AlignHCenter
-            text: "Wi-Fi, Bluetooth and audio"
-            onClicked: ModuleService.requestPanel("wifi")
         }
     }
 }

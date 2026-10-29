@@ -89,7 +89,8 @@ ColumnLayout {
     // ── ADDED PIECES ────────────────────────────────────────────────────────
     //
     // Pieces that are not on the bar until chosen. A switch places the piece at
-    // the end of its side or takes it off, and follows the layout editor below.
+    // the end of its side, with its figure showing, or takes it off, and follows
+    // the layout editor below.
     SettingGroup {
         title: Tr.t("Added pieces")
         note: Tr.t("Extra pieces for the bar, off until you turn them on.")
@@ -97,7 +98,7 @@ ColumnLayout {
 
         Repeater {
             model: [
-                { id: "netspeed", label: "Network speed", side: "left",
+                { id: "netspeed", label: "Network speed", side: "left", figure: "on",
                   note: "Download and upload speed, with a card of the connection." }
             ]
 
@@ -112,7 +113,7 @@ ColumnLayout {
                 ToggleSwitch {
                     checked: SettingsService.onBar(addedRow.modelData.id)
                     onToggled: checked => SettingsService.setOnBar(
-                        addedRow.modelData.id, checked, addedRow.modelData.side)
+                        addedRow.modelData.id, checked, addedRow.modelData.side, addedRow.modelData.figure)
                 }
             }
         }
