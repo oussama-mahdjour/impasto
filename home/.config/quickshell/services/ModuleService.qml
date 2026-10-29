@@ -47,6 +47,7 @@ Singleton {
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "brightness",    name: "Brightness",    bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(1, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
+        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(4, 116) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "notifications", name: "Notifications", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(7, 0) },
         { id: "weather",       name: "Weather",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(0, 50) },
@@ -198,6 +199,8 @@ Singleton {
         switch (id) {
         case "network":
             return NetworkService.icon
+        case "netspeed":
+            return "󰓅"
         case "bluetooth":
             return BluetoothService.icon
         case "volume":
@@ -583,6 +586,7 @@ Singleton {
         case "brightness":
             // A desktop has no backlight, the way it has no battery.
             return BrightnessService.available
+        case "netspeed":
         case "network":
             // Disconnected is still a reading.
             return true

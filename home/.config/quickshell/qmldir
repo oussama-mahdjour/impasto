@@ -132,6 +132,7 @@ Deck             1.0 deck/Deck.qml
 DynamicIsland    1.0 bar/widgets/DynamicIsland.qml
 WorkspacesWidget 1.0 bar/widgets/WorkspacesWidget.qml
 TrayWidget       1.0 bar/widgets/TrayWidget.qml
+NetSpeed         1.0 bar/widgets/NetSpeed.qml
 BatteryWidget    1.0 bar/widgets/BatteryWidget.qml
 BarZone          1.0 bar/widgets/BarZone.qml
 BarChip          1.0 bar/widgets/BarChip.qml
@@ -160,6 +161,7 @@ BatteryModule    1.0 bar/modules/BatteryModule.qml
 VolumeModule     1.0 bar/modules/VolumeModule.qml
 BrightnessModule 1.0 bar/modules/BrightnessModule.qml
 NetworkModule    1.0 bar/modules/NetworkModule.qml
+NetSpeedModule   1.0 bar/modules/NetSpeedModule.qml
 BluetoothModule  1.0 bar/modules/BluetoothModule.qml
 WeatherModule    1.0 bar/modules/WeatherModule.qml
 MarketsModule    1.0 bar/modules/MarketsModule.qml
