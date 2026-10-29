@@ -1040,4 +1040,114 @@ PanelWindow {
             }
         }
     }
+
+    // ── HOVER CARD ──────────────────────────────────────────────────────────
+    //
+    // A piece's name and value in a tab that grows down out of the bar's lower
+    // edge under it (`ModuleService.peek…`, `SettingsService.chipHover`), in
+    // the bar's own colour and joined to it by two fillets. On this screen's
+    // bar only, and not while the island is open; no input of its own.
+    Item {
+        id: peek
+
+        readonly property Item source: ModuleService.peekSource
+        readonly property bool mine: peek.source !== null && peek.source.QsWindow.window === root
+            && !island.expanded
+        property real anchorX: 0
+        property real edgeY: 0
+        property string label: ""
+        readonly property int fillet: 10
+        readonly property real fullHeight: 30
+        // One capsule's band in the island and bezel styles, else the
+        // piece's capsule.
+        readonly property color ground: root.unified ? island.surfaceColor : Theme.islandGround
+
+        // The shape the piece sits in.
+        property real shapeStart: 0
+        property real shapeEnd: 0
+        property real shapeRadius: 0
+
+        onMineChanged: {
+            if (!peek.mine)
+                return
+            const centre = peek.source.mapToItem(null, peek.source.width / 2, 0)
+            peek.anchorX = centre.x
+            if (root.unified) {
+                const edge = band.mapToItem(null, 0, band.height)
+                peek.edgeY = edge.y
+                peek.shapeStart = root.bandX
+                peek.shapeEnd = root.bandX + root.bandWidth
+                peek.shapeRadius = band.radius
+            } else {
+                const capsule = peek.source.parent ?? peek.source
+                const corner = capsule.mapToItem(null, 0, 0)
+                peek.edgeY = corner.y + capsule.height
+                peek.shapeStart = corner.x
+                peek.shapeEnd = corner.x + capsule.width
+                peek.shapeRadius = capsule.height / 2
+            }
+            peek.label = ModuleService.peekText
+        }
+
+        // Kept on the straight part of that shape's lower edge, clear of its
+        // rounded ends, so the fillets meet a flat line; centred under the
+        // piece where there is room.
+        readonly property real minX: peek.shapeStart + peek.shapeRadius + peek.fillet
+        readonly property real maxX: peek.shapeEnd - peek.shapeRadius - peek.fillet - peek.width
+
+        z: 100
+        x: peek.maxX < peek.minX ? peek.anchorX - peek.width / 2
+            : Math.max(peek.minX, Math.min(peek.maxX, peek.anchorX - peek.width / 2))
+        y: peek.edgeY
+        width: peekText.implicitWidth + 28
+        height: peek.mine ? peek.fullHeight : 0
+        visible: peek.height > 0.5
+        clip: true
+
+        Behavior on height { NumberAnimation { duration: Theme.durationFast; easing.type: Theme.easing } }
+
+        Rectangle {
+            width: parent.width
+            height: peek.fullHeight
+            color: peek.ground
+            bottomLeftRadius: 12
+            bottomRightRadius: 12
+        }
+
+        Text {
+            id: peekText
+
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: (peek.fullHeight - height) / 2 - 1
+            opacity: Math.min(1, peek.height / peek.fullHeight)
+            text: peek.label
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSizeSmall
+            font.weight: Font.DemiBold
+            font.features: { "tnum": 1 }
+            color: Theme.text
+        }
+    }
+
+    // Where the tab meets the bar: a concave fillet either side.
+    NotchFillet {
+        x: peek.x - width
+        y: peek.edgeY
+        width: peek.fillet
+        height: Math.min(peek.fillet, peek.height)
+        visible: peek.visible
+        mirrored: true
+        color: peek.ground
+        z: 100
+    }
+
+    NotchFillet {
+        x: peek.x + peek.width
+        y: peek.edgeY
+        width: peek.fillet
+        height: Math.min(peek.fillet, peek.height)
+        visible: peek.visible
+        color: peek.ground
+        z: 100
+    }
 }
