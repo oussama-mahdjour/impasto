@@ -35,9 +35,9 @@ FocusScope {
     readonly property var tabs: [Tr.t("Overview"), Tr.t("Monitor"), Tr.t("System"), Tr.t("Weather")]
     property int tab: 0
 
-    // Overview and Weather are as tall as their cards; the Monitor and System
-    // tabs fill what they are given, so they keep the panel's usual height.
-    readonly property int wanted: root.tab === 1 || root.tab === 2 ? 614
+    // Every tab is as tall as its cards, except System, whose update list
+    // fills what it is given and so keeps the panel's usual height.
+    readonly property int wanted: root.tab === 2 ? 614
         : Math.min(880, 2 * Theme.panelPadding + 34 + Theme.cardGap
             + Math.max(220, content.item ? content.item.implicitHeight : 400))
     onWantedChanged: root.heightWanted(root.wanted)
@@ -327,6 +327,7 @@ FocusScope {
                 // service running; the card never starts it.
                 Loader {
                     Layout.fillWidth: true
+                    Layout.fillHeight: true
                     active: SettingsService.onBar("claude")
                     visible: active
                     sourceComponent: Component { DashClaudeCard {} }
