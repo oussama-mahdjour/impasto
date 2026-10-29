@@ -214,6 +214,8 @@ SettingsSection {
             }
         }
 
+        IconRules {}
+
         SettingSlider {
             label: Tr.t("Workspaces shown")
             value: HyprlandService.slots

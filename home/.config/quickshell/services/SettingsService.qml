@@ -100,6 +100,7 @@ Singleton {
     readonly property alias workspaceStyle: config.workspaceStyle
     readonly property alias workspaceIcons: config.workspaceIcons
     readonly property alias workspaceExtras: config.workspaceExtras
+    readonly property alias workspaceIconRules: config.workspaceIconRules
     readonly property alias motionScale: config.motionScale
     readonly property alias motionCurve: config.motionCurve
     readonly property alias animationPreset: config.animationPreset
@@ -156,6 +157,25 @@ Singleton {
         else
             next[id] = sigil
         config.launcherPrefixes = next
+    }
+
+    // The workspace strip's own icon for a window class no desktop entry
+    // names: `{ windowClass, icon }`, the class matched as a case-insensitive
+    // fragment, the icon a name in the icon theme.
+    function addIconRule(windowClass: string, icon: string): void {
+        const fragment = windowClass.trim()
+        const name = icon.trim()
+        if (fragment === "" || name === "")
+            return
+        const kept = config.workspaceIconRules ? Array.from(config.workspaceIconRules) : []
+        kept.push({ windowClass: fragment, icon: name })
+        root.set("workspaceIconRules", kept)
+    }
+
+    function removeIconRule(index: int): void {
+        const kept = config.workspaceIconRules ? Array.from(config.workspaceIconRules) : []
+        kept.splice(index, 1)
+        root.set("workspaceIconRules", kept)
     }
 
     readonly property var clockFormats: [
@@ -690,6 +710,9 @@ Singleton {
         // Icons and the special workspace's pill beside the strip's other
         // styles; the pills style always shows them.
         property bool workspaceExtras: false
+        // Class-to-icon rules for the strip, kept in the order added; see
+        // `addIconRule`.
+        property var workspaceIconRules: []
 
         // Percentage. 100 is the designed speed; 0 disables animation.
         property int motionScale: 100

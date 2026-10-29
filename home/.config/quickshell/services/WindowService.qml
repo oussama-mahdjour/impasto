@@ -91,16 +91,12 @@ Singleton {
         return root.pick(classes, classes[0] ?? "")
     }
 
-    // Applications whose class names no desktop entry.
-    readonly property var classIcons: [
-        { match: /spotify/i, icon: "spotify-client" },
-        { match: /^com\.anthropic\.Claude$/i, icon: "claude-desktop" },
-        { match: /calendar\.google\.com/i, icon: "calendar" }
-    ]
-
-    // Never empty: a window with no icon of its own gets the generic one.
+    // Never empty: the rules the user added (Settings › Bar) come first, then
+    // the class's desktop entry, then the generic icon.
     function iconFor(windowClass: string): string {
-        const known = root.classIcons.find(rule => rule.match.test(windowClass))
+        const lowered = windowClass.toLowerCase()
+        const known = Array.from(SettingsService.workspaceIconRules ?? []).find(
+            rule => rule.windowClass !== "" && lowered.includes(String(rule.windowClass).toLowerCase()))
         if (known)
             return Quickshell.iconPath(known.icon, "application-x-executable")
         const entry = DesktopEntries.heuristicLookup(windowClass)
