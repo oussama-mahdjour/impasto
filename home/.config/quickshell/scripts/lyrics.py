@@ -36,6 +36,9 @@ ENDPOINT = "https://lrclib.net/api"
 TIMEOUT = 8
 AGENT = "impasto (github.com/andreumassanet/impasto)"
 MISS_TTL = 7 * 24 * 3600
+# Untimed lyrics are kept a day: a timed record may turn up under a name the
+# lookup reads better.
+PLAIN_TTL = 24 * 3600
 # A busy lrclib is asked once more, this long after, before giving up.
 RETRY_AFTER = 2
 
@@ -47,6 +50,8 @@ BRACKETS = re.compile(r"\s*[\(\[][^\)\]]*[\)\]]")
 # What a video title adds after a bar: the channel, the series, "Lyric Video".
 TAIL = re.compile(r"\s+[|｜].*$")
 DASH = re.compile(r"\s+[-–—]\s+")
+# "Song ft. Someone", "Song (feat. Someone)": the credit is not in the record's name.
+FEATURING = re.compile(r"\s*[\(\[]?\s*\b(?:ft|feat|featuring)\b\.?.*$", re.IGNORECASE)
 
 
 def cache_dir():
@@ -125,22 +130,35 @@ def lookup(artist, title, album, seconds, sent=""):
     def take(results):
         found.extend(entry for entry in results if entry and fits(entry))
 
-    if seconds > 0 and artist:
-        params = {"artist_name": artist, "track_name": title, "duration": round(seconds)}
-        if album:
-            params["album_name"] = album
-        try:
-            take([ask("get", params)])
-        except Busy:
-            busy = True
-        if found and found[0].get("syncedLyrics"):
-            return found[0]
+    # A video title reads "Artist - Song ft. Someone" under the channel's own
+    # name: the artist the title credits, and the song without its credit.
+    headed = DASH.split(BRACKETS.sub("", title).strip(), 1)
+    credited = headed[0].strip() if len(headed) == 2 else ""
+    song = headed[-1].strip()
+    bare = FEATURING.sub("", song).strip()
 
-    song = DASH.split(BRACKETS.sub("", title).strip(), 1)[-1].strip()
+    exact = [{"artist_name": artist, "track_name": title}] if artist else []
+    if credited and bare:
+        exact.append({"artist_name": credited, "track_name": bare})
+    if seconds > 0:
+        for params in exact:
+            params = {**params, "duration": round(seconds)}
+            if album:
+                params["album_name"] = album
+            try:
+                take([ask("get", params)])
+            except Busy:
+                busy = True
+            if any(entry.get("syncedLyrics") for entry in found):
+                return min(found, key=lambda entry: not entry.get("syncedLyrics"))
+
     questions = [{"track_name": title, **({"artist_name": artist} if artist else {})},
                  {"q": f"{artist} {title}".strip()}]
     if song and song != title:
         questions.append({"track_name": song})
+    if bare and bare != song:
+        questions.append({"track_name": bare, **({"artist_name": credited} if credited else {})})
+        questions.append({"track_name": bare})
     for params in questions:
         try:
             take(ask("search", params) or [])
@@ -192,8 +210,10 @@ def report(artist, title, album, seconds):
     try:
         with open(path) as file:
             kept = json.load(file)
-        if kept.get("available") or (kept.get("reason") == "missing"
-                                     and time.time() - kept.get("at", 0) < MISS_TTL):
+        age = time.time() - kept.get("at", 0)
+        timed = kept.get("synced") or kept.get("instrumental")
+        if (kept.get("available") and (timed or age < PLAIN_TTL)) or (
+                kept.get("reason") == "missing" and age < MISS_TTL):
             kept.pop("at", None)
             return kept
     except (OSError, ValueError):
