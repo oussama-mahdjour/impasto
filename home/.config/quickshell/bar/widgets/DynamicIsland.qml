@@ -209,7 +209,21 @@ Rectangle {
         tray: trayMenu
     })
 
+    // The launcher key, the bar's button and the dock's all end up here; with
+    // another design they open the drawer from the bottom edge instead.
+    readonly property bool launcherInDrawer: SettingsService.launcherDesign !== "island"
+
     function open(panel: string): void {
+        // Only the live island answers, as `IslandState` enforces.
+        if (!root.active)
+            return
+        // Whatever the drawers hold, the island takes over.
+        DrawerService.closeAll()
+        if (panel === "launcher" && root.launcherInDrawer) {
+            islandState.close()
+            DrawerService.openLauncher(DrawerService.designMode, "")
+            return
+        }
         islandState.open(panel)
     }
 
@@ -219,6 +233,14 @@ Rectangle {
 
     // Shortcuts toggle: the same key opens and closes.
     function toggle(panel: string): void {
+        if (panel === "launcher" && root.launcherInDrawer) {
+            // The drawer closes itself when asked for again.
+            if (root.active) {
+                islandState.close()
+                DrawerService.openLauncher(DrawerService.designMode, "")
+            }
+            return
+        }
         if (islandState.openPanel === panel)
             root.close()
         else
