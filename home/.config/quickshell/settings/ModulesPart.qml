@@ -160,9 +160,7 @@ ColumnLayout {
                 { id: "netspeed", label: "Network speed", side: "left", figure: "on",
                   note: "Download and upload speed, with a card of the connection." },
                 { id: "keyboard", label: "Keyboard layout", side: "right", figure: "on",
-                  note: "The layout in use, with a card to switch to another." },
-                { id: "devices", label: "Device batteries", side: "right", figure: "",
-                  note: "A chip for each connected device that reports a battery, such as a mouse or earbuds." }
+                  note: "The layout in use, with a card to switch to another." }
             ]
 
             SettingRow {
@@ -188,7 +186,7 @@ ColumnLayout {
     SettingGroup {
         title: Tr.t("Layout")
         note: Tr.t("Drag a piece from the catalogue onto the bar.")
-        hint: Tr.t("Drop a piece on either half of the bar to place it on that side of the island; drag it along to move it or off the bar to remove it, and click it to give it its own shape and figure. Adjacent modules share a capsule, and a split starts a new one.")
+        hint: Tr.t("Drop a piece on either half of the bar to place it on that side of the island; drag it along to move it or off the bar to remove it, and click it to give it its own shape and figure. Adjacent modules share a capsule, and a split starts a new one. Devices puts a chip on the bar for each connected device that reports a battery, such as a mouse or earbuds.")
         bare: true
 
         LayoutEditor {
