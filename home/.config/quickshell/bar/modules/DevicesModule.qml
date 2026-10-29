@@ -50,7 +50,8 @@ Item {
                 name: `${modelData.glyph}  ${modelData.name}`
                 fraction: modelData.level
                 tint: modelData.level < 0.2 ? Theme.indicatorBad : Theme.indicatorGood
-                note: modelData.charging ? "charging" : `${Math.round(modelData.level * 100)}%`
+                // The row prints the level itself; the note is only for charging.
+                note: modelData.charging ? "charging" : ""
             }
         }
     }
