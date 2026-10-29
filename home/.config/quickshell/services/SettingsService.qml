@@ -124,6 +124,7 @@ Singleton {
     readonly property alias shakeToFind: config.shakeToFind
     readonly property alias nightLight: config.nightLight
     readonly property alias nightTemperature: config.nightTemperature
+    readonly property alias brightnessBelowFloor: config.brightnessBelowFloor
     readonly property alias lidPolicy: config.lidPolicy
     readonly property alias idleLock: config.idleLock
     readonly property alias idleScreen: config.idleScreen
@@ -875,6 +876,10 @@ Singleton {
         // warm. `SunsetService` drives hyprsunset.
         property bool nightLight: false
         property int nightTemperature: 4000
+
+        // Past the backlight's floor a screen dims further with a dark layer
+        // over it alone (`DimLayer`, `BrightnessService`).
+        property bool brightnessBelowFloor: false
 
         // Closing the lid with another screen connected: `off` disables the
         // panel and moves its workspaces, `keep` leaves it on, `system`
