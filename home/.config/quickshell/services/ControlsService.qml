@@ -250,6 +250,7 @@ Singleton {
         && root.extraTools.grim === true && root.extraTools.slurp === true
         && root.extraTools.curl === true
     readonly property bool musicReady: root.extraTools.songrec === true
+        && root.extraTools.parec === true
 
     readonly property Process extrasProbe: Process {
         command: [root.extrasScript, "tools"]
@@ -420,7 +421,7 @@ Singleton {
         },
         Toggle {
             key: "lens"; icon: "󰈈"; label: Tr.t("Lens")
-            detail: Tr.t("A region, searched on Google")
+            detail: Tr.t("Select area")
             available: root.lensReady; listed: root.lensReady
             closes: true
             // Waits for the panel to close so it is not in the selection.
@@ -429,7 +430,7 @@ Singleton {
         },
         Toggle {
             key: "music"; icon: "󰎈"; label: Tr.t("Song")
-            detail: Tr.t("What is playing?")
+            detail: Tr.t("Listen")
             available: root.musicReady; listed: root.musicReady
             closes: true
             action: () => Quickshell.execDetached([root.extrasScript, "music"])

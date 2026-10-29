@@ -12,27 +12,30 @@
 
 `tools` reports which of them are installed; the shell lists a tile only when
 its tools exist. `lens` selects a region, uploads it to uguu.se (temporary
-public hosting) and opens Google Lens on the address; `music` listens to what
-the speakers play and names the song. Both end in a notification, success or
-not. Nothing is uploaded unless the shell started `lens`, which it does only
-with the `lensUpload` setting on.
+public hosting) and opens Google Lens on the address; `music` records a few
+seconds of what the speakers play, from the output's monitor, and names the
+song. Both end in a notification, success or not. Nothing is uploaded unless
+the shell started `lens`, which it does only with the `lensUpload` setting
+on.
 """
 
 import json
+import pathlib
 import shutil
 import subprocess
 import sys
-import threading
+import tempfile
 import time
 from urllib.parse import quote
 
 UPLOAD_ADDRESS = "https://uguu.se/upload"
 LENS_ADDRESS = "https://lens.google.com/uploadbyurl?url="
 
-# How long `music` listens before giving up.
-LISTEN_SECONDS = 30
+# How long `music` records before it asks, and the size of an empty WAV file.
+RECORD_SECONDS = 12
+WAV_HEADER_BYTES = 44
 
-TOOLS = ("grim", "slurp", "curl", "songrec")
+TOOLS = ("grim", "slurp", "curl", "songrec", "parec")
 
 
 def notify(title, body="", urgency="normal"):
@@ -92,37 +95,47 @@ def monitor_source():
     return result.stdout.strip() + ".monitor"
 
 
+def record(source, path):
+    """Record a monitor source to a WAV file for RECORD_SECONDS.
+
+    `songrec listen` and `songrec recognize` print nothing from a PipeWire
+    monitor, but recognising a recorded file works, so the sample is taken
+    here. parec runs until it is told to stop, and a signal (not a kill) lets
+    it finish the WAV header.
+    """
+    recorder = subprocess.Popen(
+        ["parec", "-d", source, "--file-format=wav", "--rate=44100", "--channels=2", str(path)],
+        stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        recorder.wait(timeout=RECORD_SECONDS)  # returns early only if parec failed
+    except subprocess.TimeoutExpired:
+        recorder.terminate()
+    recorder.wait()
+    return path.exists() and path.stat().st_size > WAV_HEADER_BYTES
+
+
 def music():
     source = monitor_source()
     if not source:
         notify("Song recognition", "There is no output to listen to", "critical")
         return
     notify("Listening…", "Recognising the song that is playing")
-    listener = subprocess.Popen(
-        ["songrec", "listen", "--audio-device", source, "--request-interval", "2",
-         "--json", "--disable-mpris"],
-        stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, text=True)
-    # A silent room prints nothing, so a read loop alone would never end.
-    limit = threading.Timer(LISTEN_SECONDS, listener.kill)
-    limit.start()
-    found = None
-    try:
-        for line in listener.stdout:
-            try:
-                track = json.loads(line).get("track")
-            except (ValueError, AttributeError):
-                continue
-            if isinstance(track, dict) and track.get("title"):
-                found = track
-                break
-    finally:
-        limit.cancel()
-        listener.kill()
-        listener.wait()
-    if found is None:
+    track = None
+    with tempfile.TemporaryDirectory() as directory:
+        sample = pathlib.Path(directory) / "sample.wav"
+        if not record(source, sample):
+            notify("Song recognition", "Nothing could be recorded", "critical")
+            return
+        result = run(["songrec", "audio-file-to-recognized-song", str(sample)], text=True)
+    if result is not None and result.returncode == 0:
+        try:
+            track = json.loads(result.stdout).get("track")
+        except (ValueError, AttributeError):
+            track = None
+    if not (isinstance(track, dict) and track.get("title")):
         notify("Song recognition", "No song recognised")
         return
-    notify("Song recognised", " — ".join(filter(None, [found["title"], found.get("subtitle")])))
+    notify("Song recognised", " — ".join(filter(None, [track["title"], track.get("subtitle")])))
 
 
 def main():
