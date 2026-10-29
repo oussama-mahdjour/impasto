@@ -47,7 +47,7 @@ Singleton {
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "brightness",    name: "Brightness",    bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(1, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, 76) },
+        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, 154) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "notifications", name: "Notifications", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(7, 0) },
         { id: "weather",       name: "Weather",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(0, 50) },
@@ -502,6 +502,11 @@ Singleton {
         font.weight: Font.DemiBold
     }
 
+    // The graph block (legend, plot, time axis) and the button, in the speed
+    // card; each sits a row gap and 4 px below what is above it.
+    readonly property int netGraphHeight: 102
+    readonly property int netButtonHeight: 28
+
     function netNameLines(): int {
         const room = Theme.cardWidth - 2 * (Theme.cardInset + Theme.cardPadding)
         return Math.max(1, Math.min(3, Math.ceil(root.netNameMetrics.advanceWidth(NetworkService.connectionName) / (0.9 * room))))
@@ -518,7 +523,9 @@ Singleton {
         if (id === "netspeed")
             return { width: item.width,
                      height: Theme.cardHeight(2 + Math.max(1, SystemMonitorService.addresses.length),
-                                              76 + (root.netNameLines() - 1) * 17) }
+                                              (Theme.cardRowGap + 4 + root.netGraphHeight)
+                                              + (Theme.cardRowGap + 4 + root.netButtonHeight)
+                                              + (root.netNameLines() - 1) * 17) }
         if (id === "notifications")
             return { width: item.width,
                      height: Theme.cardHeight(Math.min(6, NotificationService.history.length) + 1, 0) }
