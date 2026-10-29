@@ -1043,26 +1043,32 @@ PanelWindow {
 
     // ── HOVER CARD ──────────────────────────────────────────────────────────
     //
-    // A piece's name and value in a tab that grows down out of the bar's lower
-    // edge under it (`ModuleService.peek…`, `SettingsService.chipHover`), in
-    // the bar's own colour and joined to it by two fillets. On this screen's
-    // bar only, and not while the island is open; no input of its own.
+    // A piece's name and value in a card under it (`ModuleService.peek…`,
+    // `SettingsService.chipHover`). In the island and bezel styles the bar is
+    // one band, so the card is a tab that grows down out of the band's lower
+    // edge, in the band's colour and joined to it by two fillets. In the
+    // grouped and spread styles, with their capsules or without, a piece has
+    // no wide edge to join, so the card hangs free a little below it, as a
+    // pill in the capsules' ground and rim. Either way it stays inside the
+    // bar's width. On this screen's bar only, and not while the island is
+    // open; no input of its own.
     Item {
         id: peek
 
         readonly property Item source: ModuleService.peekSource
         readonly property bool mine: peek.source !== null && peek.source.QsWindow.window === root
             && !island.expanded
+        readonly property bool joined: root.unified
         property real anchorX: 0
         property real edgeY: 0
         property string label: ""
         readonly property int fillet: 10
         readonly property real fullHeight: 30
-        // One capsule's band in the island and bezel styles, else the
-        // piece's capsule.
-        readonly property color ground: root.unified ? island.surfaceColor : Theme.islandGround
+        readonly property real margin: 6
+        readonly property real gap: 6
+        readonly property color ground: peek.joined ? island.surfaceColor : Theme.islandGround
 
-        // The shape the piece sits in.
+        // The band's extent, for the joined tab.
         property real shapeStart: 0
         property real shapeEnd: 0
         property real shapeRadius: 0
@@ -1072,32 +1078,29 @@ PanelWindow {
                 return
             const centre = peek.source.mapToItem(null, peek.source.width / 2, 0)
             peek.anchorX = centre.x
-            if (root.unified) {
-                const edge = band.mapToItem(null, 0, band.height)
-                peek.edgeY = edge.y
+            if (peek.joined) {
+                peek.edgeY = band.mapToItem(null, 0, band.height).y
                 peek.shapeStart = root.bandX
                 peek.shapeEnd = root.bandX + root.bandWidth
                 peek.shapeRadius = band.radius
             } else {
-                const capsule = peek.source.parent ?? peek.source
-                const corner = capsule.mapToItem(null, 0, 0)
-                peek.edgeY = corner.y + capsule.height
-                peek.shapeStart = corner.x
-                peek.shapeEnd = corner.x + capsule.width
-                peek.shapeRadius = capsule.height / 2
+                peek.edgeY = peek.source.mapToItem(null, 0, peek.source.height).y + peek.gap
             }
             peek.label = ModuleService.peekText
         }
 
-        // Kept on the straight part of that shape's lower edge, clear of its
-        // rounded ends, so the fillets meet a flat line; centred under the
-        // piece where there is room.
-        readonly property real minX: peek.shapeStart + peek.shapeRadius + peek.fillet
-        readonly property real maxX: peek.shapeEnd - peek.shapeRadius - peek.fillet - peek.width
+        // Centred under the piece. Joined: kept on the straight part of the
+        // band's lower edge, clear of its rounded ends, so the fillets meet a
+        // flat line. Always: inside the bar's width.
+        readonly property real centred: peek.anchorX - peek.width / 2
+        readonly property real minX: peek.joined ? peek.shapeStart + peek.shapeRadius + peek.fillet : peek.margin
+        readonly property real maxX: peek.joined
+            ? peek.shapeEnd - peek.shapeRadius - peek.fillet - peek.width
+            : root.width - peek.margin - peek.width
 
         z: 100
-        x: peek.maxX < peek.minX ? peek.anchorX - peek.width / 2
-            : Math.max(peek.minX, Math.min(peek.maxX, peek.anchorX - peek.width / 2))
+        x: Math.max(peek.margin, Math.min(root.width - peek.margin - peek.width,
+            peek.maxX < peek.minX ? peek.centred : Math.max(peek.minX, Math.min(peek.maxX, peek.centred))))
         y: peek.edgeY
         width: peekText.implicitWidth + 28
         height: peek.mine ? peek.fullHeight : 0
@@ -1110,8 +1113,12 @@ PanelWindow {
             width: parent.width
             height: peek.fullHeight
             color: peek.ground
+            topLeftRadius: peek.joined ? 0 : 12
+            topRightRadius: peek.joined ? 0 : 12
             bottomLeftRadius: 12
             bottomRightRadius: 12
+            border.width: peek.joined ? 0 : 1
+            border.color: Theme.islandRim
         }
 
         Text {
@@ -1129,13 +1136,13 @@ PanelWindow {
         }
     }
 
-    // Where the tab meets the bar: a concave fillet either side.
+    // Where the joined tab meets the band: a concave fillet either side.
     NotchFillet {
         x: peek.x - width
         y: peek.edgeY
         width: peek.fillet
         height: Math.min(peek.fillet, peek.height)
-        visible: peek.visible
+        visible: peek.visible && peek.joined
         mirrored: true
         color: peek.ground
         z: 100
@@ -1146,7 +1153,7 @@ PanelWindow {
         y: peek.edgeY
         width: peek.fillet
         height: Math.min(peek.fillet, peek.height)
-        visible: peek.visible
+        visible: peek.visible && peek.joined
         color: peek.ground
         z: 100
     }
