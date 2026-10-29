@@ -66,6 +66,10 @@ Item {
     readonly property string peekLabel: {
         if (root.button)
             return ""
+        // A device's own chip already reads "Mouse 15%": the card repeats it
+        // as it is, without the piece's name in front.
+        if (root.device)
+            return face.value
         const name = ModuleService.entry(root.moduleId)?.name ?? ""
         return face.value !== "" ? `${name} · ${face.value}` : name
     }
