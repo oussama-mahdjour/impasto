@@ -118,7 +118,7 @@ Rectangle {
         module:     root.moduleSize,
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
-        overview:   { width: 1560, height: 72 + root.overviewRows * 190 }
+        overview:   { width: 1560, height: 72 + root.overviewRows * 190 + 62 }
     })
 
     // One panel under two names (its two strips), so switching between them

@@ -384,6 +384,14 @@ QtObject {
         root.loadClients()
     }
 
+    // Sends a window to a named workspace (`special:name` for a special one),
+    // leaving the view where it is.
+    function moveClientToNamed(address: string, workspaceName: string): void {
+        Hyprland.dispatch(`hl.dsp.window.move({ workspace = "${workspaceName}", window = "address:${address}", follow = false })`)
+        root.refresh()
+        root.loadClients()
+    }
+
     // ── BIND NAMES ──────────────────────────────────────────────────────────
     //
     // `hyprctl binds` returns a modifier mask and key; `hl.bind` wants
