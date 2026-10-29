@@ -35,17 +35,18 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             text: root.icon
             font.family: Theme.fontMono
-            font.pixelSize: 15
+            font.pixelSize: 18
             // The glyph identifies the control; the level carries the palette.
             color: Theme.indicator
         }
 
         // The bar carries the magnitude; the number is only for confirming it.
+        // Wide and thick enough to read a step of a few percent from.
         Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             visible: root.hasLevel
-            width: 130
-            height: 4
+            width: 170
+            height: 8
             radius: height / 2
             color: Theme.surfaceHoverIn(QsWindow.window)
 
