@@ -98,6 +98,8 @@ Singleton {
     readonly property alias workspaceMax: config.workspaceMax
     readonly property alias workspaceMode: config.workspaceMode
     readonly property alias workspaceStyle: config.workspaceStyle
+    readonly property alias workspaceIcons: config.workspaceIcons
+    readonly property alias workspaceExtras: config.workspaceExtras
     readonly property alias motionScale: config.motionScale
     readonly property alias motionCurve: config.motionCurve
     readonly property alias animationPreset: config.animationPreset
@@ -298,6 +300,7 @@ Singleton {
         { id: "dots", label: "Dots" },
         { id: "bars", label: "Bars" },
         { id: "rings", label: "Rings" },
+        { id: "pills", label: "Pills" },
         { id: "numbers", label: "Numbers" },
         { id: "roman", label: "Roman" },
         { id: "kanji", label: "Kanji" },
@@ -677,9 +680,16 @@ Singleton {
         // `shared`: every screen shares the same workspaces. `screen`: each
         // has ten of its own, the main screen 1–10 and the rest after it.
         property string workspaceMode: "shared"
-        // How the strip draws each workspace: a shape (`dots`, `bars`, `rings`)
-        // or its number written out (`numbers`, `roman`, `kanji`, `greek`).
+        // How the strip draws each workspace: a shape (`dots`, `bars`, `rings`),
+        // pills holding the number and the apps (`pills`) or its number written
+        // out (`numbers`, `roman`, `kanji`, `greek`).
         property string workspaceStyle: "dots"
+        // The apps' icons on a workspace: `group` (the focused one's apps, up to
+        // four), `single` (one per workspace, its last window) or `none`.
+        property string workspaceIcons: "group"
+        // Icons and the special workspace's pill beside the strip's other
+        // styles; the pills style always shows them.
+        property bool workspaceExtras: false
 
         // Percentage. 100 is the designed speed; 0 disables animation.
         property int motionScale: 100
