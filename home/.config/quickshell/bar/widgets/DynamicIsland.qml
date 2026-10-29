@@ -85,6 +85,7 @@ Rectangle {
         appearance: root.appearanceSize,
         palette:    root.appearanceSize,
         stats:      { width: 940,  height: 614 },
+        dashboard:  { width: 940,  height: 614 },
         // Depends on the results when `launcherFits` is on.
         launcher:   { width: LauncherService.panelWidth,
                       height: LauncherService.panelHeight },
@@ -179,6 +180,7 @@ Rectangle {
         brightness: brightnessDetail,
         bluetooth: bluetoothDetail,
         stats: statsPanel,
+        dashboard: dashboardPanel,
         overview: overviewPanel,
         session: sessionPanel,
         auth: authPanel,
@@ -621,6 +623,14 @@ Rectangle {
     Component {
         id: statsPanel
         StatsPanel { onClosed: root.close() }
+    }
+
+    Component {
+        id: dashboardPanel
+        DashboardPanel {
+            onClosed: root.close()
+            onPanelRequested: panel => root.open(panel)
+        }
     }
 
     Component {
