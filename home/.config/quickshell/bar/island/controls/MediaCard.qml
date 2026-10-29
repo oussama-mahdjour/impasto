@@ -43,51 +43,15 @@ Card {
             Layout.fillWidth: true
             spacing: 12
 
-            Item {
+            CoverArt {
                 Layout.preferredWidth: 58
                 Layout.preferredHeight: 58
 
-                // Bars around the cover, in the card's padding.
-                CoverRing {
-                    id: ring
-                    anchors.fill: parent
-                    active: SettingsService.mediaRing
-                    innerRadius: parent.width / 2 + 3
-                }
+                HoverHandler { cursorShape: Qt.PointingHandCursor }
 
-                ClippingRectangle {
-                    anchors.fill: parent
-                    // Round inside a ring.
-                    radius: ring.shown ? width / 2 : width * Theme.pictureCorner
-                    // None behind a picture: a player may send its logo on transparency.
-                    color: art.visible ? "transparent" : Theme.surfaceHoverIn(QsWindow.window)
-
-                    Image {
-                        id: art
-                        anchors.fill: parent
-                        source: MediaService.artUrl
-                        visible: source != "" && status === Image.Ready
-                        fillMode: Image.PreserveAspectCrop
-                        asynchronous: true
-                        sourceSize.width: 116
-                        sourceSize.height: 116
-                    }
-
-                    Text {
-                        anchors.centerIn: parent
-                        visible: !art.visible
-                        text: "󰎇"
-                        font.family: Theme.fontMono
-                        font.pixelSize: 22
-                        color: Theme.accent
-                    }
-
-                    HoverHandler { cursorShape: Qt.PointingHandCursor }
-
-                    TapHandler {
-                        gesturePolicy: TapHandler.ReleaseWithinBounds
-                        onTapped: root.panelRequested("media")
-                    }
+                TapHandler {
+                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                    onTapped: root.panelRequested("media")
                 }
             }
 

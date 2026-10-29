@@ -158,18 +158,22 @@ SettingsSection {
     }
 
     SettingGroup {
-        title: Tr.t("Media card")
-        note: Tr.t("The player in the control centre.")
-        hint: Tr.t("The bars come from cava, which listens to the sound only while the card is open. Without cava installed the cover stays plain.")
+        title: Tr.t("Media cover")
+        note: Tr.t("The picture of what is playing, in the control centre, the island, the media card and the lyrics.")
+        hint: Tr.t("The bars around a circle come from cava, which listens to the sound only while a cover with bars is visible. Without cava installed the circle stays plain.")
 
         SettingRow {
-            label: Tr.t("Ring around the cover")
-            reading: SettingsService.mediaRing
-                ? Tr.t("Bars move around a round cover with the music") : Tr.t("Plain cover")
+            label: Tr.t("Shape")
+            reading: SettingsService.mediaCover === "circle"
+                ? Tr.t("A round cover, with bars around it where there is room") : Tr.t("A rounded rectangle")
 
-            ToggleSwitch {
-                checked: SettingsService.mediaRing
-                onToggled: checked => SettingsService.set("mediaRing", checked)
+            SegmentedControl {
+                options: [
+                    { id: "rectangle", label: Tr.t("Rectangle") },
+                    { id: "circle", label: Tr.t("Circle") }
+                ]
+                current: SettingsService.mediaCover
+                onSelected: id => SettingsService.set("mediaCover", id)
             }
         }
     }

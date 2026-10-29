@@ -46,7 +46,10 @@ Singleton {
     readonly property alias islandSummary: config.islandSummary
     readonly property alias connectivityTabs: config.connectivityTabs
     readonly property alias lyrics: config.lyrics
-    readonly property alias mediaRing: config.mediaRing
+    // "rectangle" or "circle", the cover's shape wherever the shell shows it. A
+    // config from before the choice has only `mediaRing`, which meant circle.
+    readonly property string mediaCover: config.mediaCover !== ""
+        ? config.mediaCover : (config.mediaRing ? "circle" : "rectangle")
     readonly property alias islandActivities: config.islandActivities
     readonly property alias chipShape: config.chipShape
     readonly property alias chipFigure: config.chipFigure
@@ -676,8 +679,10 @@ Singleton {
         // something on screen shows them.
         property bool lyrics: true
 
-        // The media card's cover sits in a ring of bars from the audio
-        // spectrum. Needs cava.
+        // The cover's shape everywhere: "rectangle" or "circle", the circle
+        // with a ring of bars from the audio spectrum around it where there is
+        // room (needs cava). "" follows `mediaRing`, the first form of this.
+        property string mediaCover: ""
         property bool mediaRing: false
 
         // Null means `besideDefaults`.
