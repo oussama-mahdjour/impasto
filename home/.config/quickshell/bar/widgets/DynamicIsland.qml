@@ -80,6 +80,9 @@ Rectangle {
     readonly property int overviewSpecialHeight:
         HyprlandService.specialShown(root.QsWindow.window?.screen?.name ?? "") ? 62 : 0
 
+    // The dashboard's height follows its tab (`DashboardPanel.heightWanted`).
+    property int dashboardHeight: 560
+
     // ── PANEL SIZES ─────────────────────────────────────────────────────────
     //
     // Declared rather than measured: the island has to reach its final shape
@@ -89,7 +92,7 @@ Rectangle {
         appearance: root.appearanceSize,
         palette:    root.appearanceSize,
         stats:      { width: 940,  height: 614 },
-        dashboard:  { width: 940,  height: 614 },
+        dashboard:  { width: 1040, height: root.dashboardHeight },
         // Depends on the results when `launcherFits` is on.
         launcher:   { width: LauncherService.panelWidth,
                       height: LauncherService.panelHeight },
@@ -680,6 +683,8 @@ Rectangle {
         DashboardPanel {
             onClosed: root.close()
             onPanelRequested: panel => root.open(panel)
+            onHeightWanted: height => root.dashboardHeight = height
+            Component.onCompleted: root.dashboardHeight = wanted
         }
     }
 

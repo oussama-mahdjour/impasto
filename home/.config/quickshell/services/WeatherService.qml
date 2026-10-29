@@ -45,6 +45,18 @@ Singleton {
     property string icon: ""
     property int humidity: 0
     property int wind: 0
+    property string windUnit: "km/h"
+    // The dashboard's "Now" grid.
+    property int uv: 0
+    property int pressure: 0
+    property string pressureUnit: "hPa"
+    property int visibility: 0
+    property string visibilityUnit: "km"
+    property int cloud: 0
+    property string sunrise: ""
+    property string sunset: ""
+    // `{ date, low, high, glyph, icon, rain }` per day.
+    property var days: []
     property int low: 0
     property int high: 0
     property var hourly: []
@@ -75,13 +87,23 @@ Singleton {
         return `${hours} h ago`
     }
 
-    // The next four three-hour blocks, running into tomorrow when today has
-    // none left.
-    readonly property var ahead: {
+    // The three-hour blocks still to come, today's then tomorrow's.
+    readonly property var upcoming: {
         const hour = root.clock.date.getHours()
-        return (root.hourly ?? [])
-            .filter(block => block.tomorrow || block.hour > hour)
-            .slice(0, 4)
+        return (root.hourly ?? []).filter(block => block.tomorrow || block.hour > hour)
+    }
+
+    // The next four, running into tomorrow when today has none left.
+    readonly property var ahead: root.upcoming.slice(0, 4)
+
+    // A block's label: its hour, with the weekday on tomorrow's first.
+    function blockLabel(block: var, index: int, list: var): string {
+        const time = `${String(block.hour).padStart(2, "0")}:00`
+        const firstOfTomorrow = block.tomorrow && (index === 0 || !list[index - 1].tomorrow)
+        if (!firstOfTomorrow)
+            return time
+        const tomorrow = new Date(root.clock.date.getTime() + 86400000)
+        return `${tomorrow.toLocaleDateString(Qt.locale(), "ddd")} ${time}`
     }
 
     function subscribe(): void {
@@ -193,6 +215,16 @@ Singleton {
         root.icon = report.icon ?? ""
         root.humidity = report.humidity
         root.wind = report.wind
+        root.windUnit = report.windUnit ?? "km/h"
+        root.uv = report.uv ?? 0
+        root.pressure = report.pressure ?? 0
+        root.pressureUnit = report.pressureUnit ?? "hPa"
+        root.visibility = report.visibility ?? 0
+        root.visibilityUnit = report.visibilityUnit ?? "km"
+        root.cloud = report.cloud ?? 0
+        root.sunrise = report.sunrise ?? ""
+        root.sunset = report.sunset ?? ""
+        root.days = report.days ?? []
         root.low = report.low
         root.high = report.high
         root.hourly = report.hourly ?? []

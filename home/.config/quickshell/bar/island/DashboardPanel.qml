@@ -27,11 +27,20 @@ FocusScope {
     id: root
 
     signal closed()
+    // The height this tab needs, for the island (`DynamicIsland`).
+    signal heightWanted(int height)
     // A card inside asking for another panel, e.g. the board from a task.
     signal panelRequested(string panel)
 
     readonly property var tabs: [Tr.t("Overview"), Tr.t("Monitor"), Tr.t("System"), Tr.t("Weather")]
     property int tab: 0
+
+    // Overview and Weather are as tall as their cards; the Monitor and System
+    // tabs fill what they are given, so they keep the panel's usual height.
+    readonly property int wanted: root.tab === 1 || root.tab === 2 ? 614
+        : Math.min(880, 2 * Theme.panelPadding + 34 + Theme.cardGap
+            + Math.max(220, content.item ? content.item.implicitHeight : 400))
+    onWantedChanged: root.heightWanted(root.wanted)
 
     Component.onCompleted: {
         root.forceActiveFocus()
@@ -70,6 +79,8 @@ FocusScope {
         }
 
         Loader {
+            id: content
+
             Layout.fillWidth: true
             Layout.fillHeight: true
             sourceComponent: [overview, monitor, system, weather][root.tab]
@@ -137,35 +148,83 @@ FocusScope {
             spacing: 12
 
             // The date, and the month with today marked.
-            ColumnLayout {
+            DashCard {
                 Layout.preferredWidth: 300
                 Layout.fillHeight: true
-                spacing: 12
 
-                DashCard {
+                Text {
+                    text: Qt.formatTime(clock.date, SettingsService.clockFormat)
+                    font.family: Theme.fontDisplay
+                    font.pixelSize: 56
+                    font.weight: Font.Medium
+                    color: Theme.text
+                }
+
+                Text {
+                    text: Qt.formatDate(clock.date, "dddd d MMMM")
+                    font.family: Theme.fontFamily
+                    font.pixelSize: Theme.fontSizeMedium
+                    color: Theme.textMuted
+                }
+
+                GridLayout {
                     Layout.fillWidth: true
+                    Layout.topMargin: 8
+                    columns: 7
+                    rowSpacing: 4
+                    columnSpacing: 4
 
-                    Text {
-                        text: Qt.formatTime(clock.date, SettingsService.clockFormat)
-                        font.family: Theme.fontDisplay
-                        font.pixelSize: 56
-                        font.weight: Font.Medium
-                        color: Theme.text
+                    Repeater {
+                        model: ["M", "T", "W", "T", "F", "S", "S"]
+
+                        Text {
+                            required property string modelData
+
+                            Layout.fillWidth: true
+                            horizontalAlignment: Text.AlignHCenter
+                            text: modelData
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeLabel
+                            color: Theme.textMuted
+                        }
                     }
 
-                    Text {
-                        text: Qt.formatDate(clock.date, "dddd d MMMM")
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontSizeMedium
-                        color: Theme.textMuted
+                    Repeater {
+                        model: {
+                            const today = clock.date
+                            const first = new Date(today.getFullYear(), today.getMonth(), 1)
+                            const offset = (first.getDay() + 6) % 7
+                            const length = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate()
+                            const cells = []
+                            for (let index = 0; index < offset; index++)
+                                cells.push(0)
+                            for (let day = 1; day <= length; day++)
+                                cells.push(day)
+                            return cells
+                        }
+
+                        Rectangle {
+                            required property int modelData
+                            readonly property bool today: modelData === clock.date.getDate()
+
+                            Layout.fillWidth: true
+                            Layout.preferredHeight: 28
+                            radius: 14
+                            color: today ? Theme.accent : "transparent"
+
+                            Text {
+                                anchors.centerIn: parent
+                                visible: parent.modelData > 0
+                                text: parent.modelData
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSizeSmall
+                                color: parent.today ? Theme.accentText : Theme.text
+                            }
+                        }
                     }
                 }
 
-                CalendarCard {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-                    onPanelRequested: panel => root.panelRequested(panel)
-                }
+                Item { Layout.fillHeight: true }
             }
 
             ColumnLayout {
@@ -175,18 +234,17 @@ FocusScope {
 
                 // Weather now and the next hours.
                 DashCard {
-                    title: WeatherService.place !== ""
-                        ? `${Tr.t("Weather")} · ${WeatherService.place}` : Tr.t("Weather")
+                    title: WeatherService.place !== "" ? `Weather · ${WeatherService.place}` : "Weather"
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
+                    Layout.preferredHeight: 170
 
                     RowLayout {
                         Layout.fillWidth: true
                         spacing: 14
 
                         WeatherIcon {
-                            name: WeatherService.available ? WeatherService.icon : ""
-                            glyph: WeatherService.available ? WeatherService.glyph : ""
+                            name: WeatherService.icon
+                            glyph: WeatherService.glyph
                             size: 50
                         }
 
@@ -202,57 +260,67 @@ FocusScope {
 
                             Text {
                                 text: WeatherService.available
-                                    ? `${WeatherService.description} · ${WeatherService.low}° / ${WeatherService.high}°`
-                                    : Tr.t("No reading")
+                                    ? `${WeatherService.description} · ${WeatherService.low}° / ${WeatherService.high}°` : ""
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeSmall
                                 color: Theme.textMuted
                             }
                         }
-                    }
 
-                    RowLayout {
-                        Layout.fillWidth: true
-                        spacing: 4
+                        // As many of the next hours as the card has room
+                        // for, right-aligned; never past its edge.
+                        Item {
+                            id: hoursRoom
 
-                        Repeater {
-                            model: ScriptModel {
-                                values: WeatherService.ahead
-                            }
+                            readonly property int column: 62
+                            readonly property var shown: WeatherService.ahead
+                                .slice(0, Math.max(0, Math.floor(hoursRoom.width / hoursRoom.column)))
 
-                            ColumnLayout {
-                                required property var modelData
+                            Layout.fillWidth: true
+                            Layout.fillHeight: true
+                            clip: true
 
-                                Layout.fillWidth: true
-                                spacing: 2
+                            Row {
+                                anchors.right: parent.right
+                                anchors.verticalCenter: parent.verticalCenter
 
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: root.hourLabel(modelData)
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSizeLabel
-                                    color: Theme.textMuted
-                                }
+                                Repeater {
+                                    model: hoursRoom.shown
 
-                                WeatherIcon {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    name: modelData.icon ?? ""
-                                    glyph: modelData.glyph
-                                    size: 26
-                                }
+                                    Column {
+                                        required property var modelData
+                                        required property int index
 
-                                Text {
-                                    Layout.alignment: Qt.AlignHCenter
-                                    text: `${modelData.temperature}°`
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: Theme.fontSizeSmall
-                                    color: Theme.text
+                                        width: hoursRoom.column
+                                        spacing: 2
+
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: WeatherService.blockLabel(modelData, index, hoursRoom.shown)
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSizeLabel
+                                            color: Theme.textMuted
+                                        }
+
+                                        WeatherIcon {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            name: modelData.icon
+                                            glyph: modelData.glyph
+                                            size: 26
+                                        }
+
+                                        Text {
+                                            anchors.horizontalCenter: parent.horizontalCenter
+                                            text: `${modelData.temperature}°`
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: Theme.fontSizeSmall
+                                            color: Theme.text
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-
-                    Item { Layout.fillHeight: true }
                 }
 
                 // Only while Claude is on the bar, where its module keeps the
@@ -522,7 +590,8 @@ FocusScope {
                         spacing: 8
 
                         Text {
-                            Layout.preferredWidth: 16
+                            Layout.preferredWidth: 24
+                            horizontalAlignment: Text.AlignHCenter
                             text: modelData.glyph
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.fontSizeSmall
@@ -561,20 +630,19 @@ FocusScope {
     Component {
         id: weather
 
-        ColumnLayout {
-            id: weatherTab
-
-            readonly property var upcoming: (WeatherService.hourly ?? [])
-                .filter(block => block.tomorrow || block.hour > clock.date.getHours())
-                .slice(0, 8)
-
-            spacing: 12
+        GridLayout {
+            columns: 3
+            rows: 2
+            columnSpacing: 12
+            rowSpacing: 12
 
             DashCard {
-                title: WeatherService.place !== ""
-                    ? `${Tr.t("Now")} · ${WeatherService.place}, ${WeatherService.region}` : Tr.t("Now")
+                title: WeatherService.place !== "" ? `Now · ${WeatherService.place}, ${WeatherService.region}` : "Now"
+                Layout.row: 0
+                Layout.column: 0
+                Layout.columnSpan: 2
                 Layout.fillWidth: true
-                Layout.preferredHeight: 220
+                Layout.preferredHeight: 196
 
                 RowLayout {
                     Layout.fillWidth: true
@@ -586,15 +654,14 @@ FocusScope {
                     // facts get the rest.
                     ColumnLayout {
                         Layout.fillWidth: false
-                        Layout.preferredWidth: 220
+                        Layout.preferredWidth: 200
                         spacing: 2
 
                         RowLayout {
                             spacing: 12
 
                             WeatherIcon {
-                                name: WeatherService.available ? WeatherService.icon : ""
-                                glyph: WeatherService.available ? WeatherService.glyph : ""
+                                name: WeatherService.icon
                                 size: 64
                             }
 
@@ -608,7 +675,7 @@ FocusScope {
 
                         Text {
                             Layout.fillWidth: true
-                            text: WeatherService.available ? WeatherService.description : Tr.t("No reading")
+                            text: WeatherService.available ? WeatherService.description : "No weather"
                             elide: Text.ElideRight
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeRegular
@@ -618,26 +685,31 @@ FocusScope {
                         Text {
                             Layout.fillWidth: true
                             visible: WeatherService.available
-                            text: `${WeatherService.low}° ${Tr.t("low")} · ${WeatherService.high}° ${Tr.t("high")}`
+                            text: `${WeatherService.low}° low · ${WeatherService.high}° high`
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeSmall
                             color: Theme.textMuted
                         }
                     }
 
+                    // The facts, four by two.
                     GridLayout {
                         Layout.fillWidth: true
                         Layout.fillHeight: true
-                        columns: 2
+                        columns: 4
                         rowSpacing: 8
                         columnSpacing: 8
 
                         Repeater {
                             model: [
-                                { glyph: "󰔏", key: Tr.t("Feels like"), value: `${WeatherService.feelsLike}°` },
-                                { glyph: "󰖎", key: Tr.t("Humidity"), value: `${WeatherService.humidity} %` },
-                                { glyph: "󰖝", key: Tr.t("Wind"), value: `${WeatherService.wind} km/h` },
-                                { glyph: "󰅐", key: Tr.t("Updated"), value: WeatherService.age }
+                                { glyph: "󰔏", key: "Feels", value: `${WeatherService.feelsLike}°` },
+                                { glyph: "󰖎", key: "Humidity", value: `${WeatherService.humidity} %` },
+                                { glyph: "󰖝", key: "Wind", value: `${WeatherService.wind} ${WeatherService.windUnit}` },
+                                { glyph: "󰖙", key: "UV", value: `${WeatherService.uv}` },
+                                { glyph: "󰖐", key: "Clouds", value: `${WeatherService.cloud} %` },
+                                { glyph: "󰈈", key: "Visibility", value: `${WeatherService.visibility} ${WeatherService.visibilityUnit}` },
+                                { glyph: "󰖜", key: "Sunrise", value: WeatherService.sunrise },
+                                { glyph: "󰖛", key: "Sunset", value: WeatherService.sunset }
                             ]
 
                             Rectangle {
@@ -645,8 +717,8 @@ FocusScope {
 
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
-                                radius: Theme.radiusMedium
-                                color: Theme.surfaceHoverIn(QsWindow.window)
+                                radius: Theme.radiusLarge
+                                color: Theme.islandSurfaceHover
 
                                 Column {
                                     anchors.centerIn: parent
@@ -676,29 +748,94 @@ FocusScope {
                 }
             }
 
+            // The days, down both rows.
             DashCard {
-                title: Tr.t("Next hours")
-                Layout.fillWidth: true
+                title: "Days"
+                Layout.row: 0
+                Layout.column: 2
+                Layout.rowSpan: 2
+                Layout.preferredWidth: 300
                 Layout.fillHeight: true
+
+                Repeater {
+                    model: WeatherService.days
+
+                    Rectangle {
+                        required property var modelData
+
+                        Layout.fillWidth: true
+                        Layout.fillHeight: true
+                        radius: Theme.radiusLarge
+                        color: Theme.islandSurfaceHover
+
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.leftMargin: 14
+                            anchors.rightMargin: 14
+                            spacing: 10
+
+                            ColumnLayout {
+                                Layout.fillWidth: true
+                                spacing: 0
+
+                                Text {
+                                    text: Qt.formatDate(new Date(modelData.date + "T12:00:00"), "dddd")
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSizeRegular
+                                    font.weight: Font.DemiBold
+                                    color: Theme.text
+                                }
+
+                                Text {
+                                    text: `󰖗 ${modelData.rain} %`
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: Theme.fontSizeSmall
+                                    color: Theme.textMuted
+                                }
+                            }
+
+                            WeatherIcon {
+                                name: modelData.icon ?? ""
+                                size: 40
+                            }
+
+                            Text {
+                                text: `${modelData.low}° / ${modelData.high}°`
+                                font.family: Theme.fontFamily
+                                font.pixelSize: Theme.fontSizeRegular
+                                font.weight: Font.DemiBold
+                                font.features: { "tnum": 1 }
+                                color: Theme.text
+                            }
+                        }
+                    }
+                }
+            }
+
+            DashCard {
+                title: "Next hours"
+                Layout.row: 1
+                Layout.column: 0
+                Layout.columnSpan: 2
+                Layout.fillWidth: true
+                Layout.preferredHeight: 128
 
                 RowLayout {
                     Layout.fillWidth: true
-                    Layout.fillHeight: true
 
                     Repeater {
-                        model: ScriptModel {
-                            values: weatherTab.upcoming
-                        }
+                        model: WeatherService.upcoming.slice(0, 8)
 
                         ColumnLayout {
                             required property var modelData
+                            required property int index
 
                             Layout.fillWidth: true
                             spacing: 2
 
                             Text {
                                 Layout.alignment: Qt.AlignHCenter
-                                text: root.hourLabel(modelData)
+                                text: WeatherService.blockLabel(modelData, index, WeatherService.upcoming)
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeLabel
                                 color: Theme.textMuted
@@ -706,28 +843,16 @@ FocusScope {
 
                             WeatherIcon {
                                 Layout.alignment: Qt.AlignHCenter
-                                name: modelData.icon ?? ""
-                                glyph: modelData.glyph
+                                name: modelData.icon
                                 size: 28
                             }
 
                             Text {
                                 Layout.alignment: Qt.AlignHCenter
-                                text: `${modelData.temperature}°`
-                                font.family: Theme.fontFamily
-                                font.pixelSize: Theme.fontSizeSmall
-                                font.weight: Font.DemiBold
-                                color: Theme.text
-                            }
-
-                            // Only when there is some chance of rain.
-                            Text {
-                                Layout.alignment: Qt.AlignHCenter
-                                visible: modelData.rain >= 20
-                                text: `${modelData.rain}%`
+                                text: `${modelData.temperature}° · ${modelData.rain}%`
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeLabel
-                                color: Theme.blue
+                                color: Theme.text
                             }
                         }
                     }
