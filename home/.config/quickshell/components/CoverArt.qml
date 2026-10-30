@@ -64,7 +64,19 @@ Item {
             sourceSize.width: Math.round(root.size * 2)
             sourceSize.height: Math.round(root.size * 2)
 
-            RotationAnimation on rotation {
+            // Turns only a round cover that is spinning; any other stands upright.
+            rotation: root.spin && root.circle ? turn.angle : 0
+        }
+
+        Item {
+            id: turn
+
+            property real angle: 0
+
+            width: 0
+            height: 0
+
+            NumberAnimation on angle {
                 from: 0
                 to: 360
                 duration: 24000
