@@ -23,6 +23,7 @@ import json
 import subprocess
 import sys
 import urllib.parse
+from datetime import datetime
 
 ENDPOINT = "https://wttr.in/{place}?format=j1"
 TIMEOUT = 12
@@ -98,6 +99,35 @@ def fetch(place):
     return json.loads(result.stdout)
 
 
+def daytime_now(current, today):
+    """Whether the sun is up where the reading is: the local observation time
+    against today's sunrise and sunset. True when wttr.in sends none of them."""
+    try:
+        astronomy = today["astronomy"][0]
+        observed = datetime.strptime(current["localObsDateTime"].split(" ", 1)[1], "%I:%M %p")
+        sunrise = datetime.strptime(astronomy["sunrise"], "%I:%M %p")
+        sunset = datetime.strptime(astronomy["sunset"], "%I:%M %p")
+    except (KeyError, IndexError, ValueError):
+        return True
+    return sunrise <= observed < sunset
+
+
+def day_report(day):
+    """One day of the forecast, or None when wttr.in sent it without its hours."""
+    blocks = day.get("hourly") or []
+    if not blocks:
+        return None
+    middle = int(blocks[len(blocks) // 2].get("weatherCode", 0))
+    return {
+        "date": day.get("date", ""),
+        "low": int(day.get("mintempC", 0)),
+        "high": int(day.get("maxtempC", 0)),
+        "glyph": glyph(middle, True),
+        "icon": icon(middle, True),
+        "rain": max(int(block.get("chanceofrain", 0)) for block in blocks),
+    }
+
+
 def report(place):
     data = fetch(place)
     current = data["current_condition"][0]
@@ -105,10 +135,9 @@ def report(place):
     today = data["weather"][0]
 
     code = int(current["weatherCode"])
-    daytime = current["observation_time"] and True
-    # wttr.in reports observation time in UTC and `isdaytime` only per hour, so
-    # the day/night split comes from the hour blocks the day is made of.
-    hours = today["hourly"]
+    # The icon at night is the night one: by the observation's local time and
+    # today's sun, since wttr.in gives `isdaytime` only per hour block.
+    daytime = daytime_now(current, today)
 
     return {
         "available": True,
@@ -148,17 +177,7 @@ def report(place):
             for block in blocks
         ],
         # Every day wttr.in has (three), for the dashboard.
-        "days": [
-            {
-                "date": day["date"],
-                "low": int(day["mintempC"]),
-                "high": int(day["maxtempC"]),
-                "glyph": glyph(int(day["hourly"][len(day["hourly"]) // 2]["weatherCode"]), True),
-                "icon": icon(int(day["hourly"][len(day["hourly"]) // 2]["weatherCode"]), True),
-                "rain": max(int(block["chanceofrain"]) for block in day["hourly"]),
-            }
-            for day in data["weather"]
-        ],
+        "days": [entry for entry in map(day_report, data["weather"]) if entry is not None],
     }
 
 

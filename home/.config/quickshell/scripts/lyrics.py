@@ -17,7 +17,8 @@ Prints {"available": true, "synced": bool, "instrumental": bool, "lines":
 [{"t": seconds, "text": "..."}]} — `t` is -1 for unsynced lyrics — or
 {"available": false, "reason": "missing" | "network"}.
 
-Answers are cached in the state directory, a miss for a week, so a track
+Answers are cached in the state directory, a miss for a week and untimed
+lyrics for a day, so a track
 asked for again costs nothing. A failure is not cached: the shell asks
 again on its own schedule.
 """
@@ -39,6 +40,9 @@ MISS_TTL = 7 * 24 * 3600
 # Untimed lyrics are kept a day: a timed record may turn up under a name the
 # lookup reads better.
 PLAIN_TTL = 24 * 3600
+# Part of the cache key, so a better lookup is not answered by what the one
+# before it kept.
+LOOKUP_VERSION = "2"
 # A busy lrclib is asked once more, this long after, before giving up.
 RETRY_AFTER = 2
 
@@ -97,7 +101,7 @@ def folded(text):
 
 
 def lookup(artist, title, album, seconds, sent=""):
-    """The best record over four questions, any of which may be refused.
+    """The best record over several questions, any of which may be refused.
 
     The exact record first, which lrclib matches within two seconds; then a
     search by fields, then a free search, since a busy server refuses some
@@ -138,8 +142,10 @@ def lookup(artist, title, album, seconds, sent=""):
     bare = FEATURING.sub("", song).strip()
 
     exact = [{"artist_name": artist, "track_name": title}] if artist else []
-    if credited and bare:
-        exact.append({"artist_name": credited, "track_name": bare})
+    # The song without its credit, under the artist the title credits, or the
+    # artist the player gave when `clean` has already split the title.
+    if bare and (credited or bare != title) and (credited or artist):
+        exact.append({"artist_name": credited or artist, "track_name": bare})
     if seconds > 0:
         for params in exact:
             params = {**params, "duration": round(seconds)}
@@ -205,8 +211,9 @@ def report(artist, title, album, seconds):
     if not title:
         return {"available": False, "reason": "missing"}
 
-    key = hashlib.sha1(f"{artist}\n{title}\n{album}\n{round(seconds)}".encode()).hexdigest()
+    key = hashlib.sha1(f"{LOOKUP_VERSION}\n{artist}\n{title}\n{album}\n{round(seconds)}".encode()).hexdigest()
     path = os.path.join(cache_dir(), f"{key}.json")
+    stale = None
     try:
         with open(path) as file:
             kept = json.load(file)
@@ -216,6 +223,8 @@ def report(artist, title, album, seconds):
                 kept.get("reason") == "missing" and age < MISS_TTL):
             kept.pop("at", None)
             return kept
+        if kept.get("available"):
+            stale = kept
     except (OSError, ValueError):
         pass
 
@@ -228,6 +237,10 @@ def report(artist, title, album, seconds):
         result = (parse(entry) if entry else None) or {"available": False, "reason": "missing"}
     except Busy as error:
         sys.stderr.write(f"lyrics: {error}\n")
+        # What was kept, though old, beats nothing while lrclib is busy.
+        if stale is not None:
+            stale.pop("at", None)
+            return stale
         return {"available": False, "reason": "network"}
 
     staging = f"{path}.tmp"

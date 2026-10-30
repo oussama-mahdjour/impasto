@@ -40,7 +40,9 @@ Card {
 
     TapHandler {
         gesturePolicy: TapHandler.ReleaseWithinBounds
-        onTapped: root.panelRequested("weather")
+        // With no reading there is no detail to open, and the control centre
+        // would close on nothing.
+        onTapped: if (WeatherService.available) root.panelRequested("weather")
     }
 
     // ── LINE ────────────────────────────────────────────────────────────────

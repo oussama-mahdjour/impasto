@@ -233,15 +233,16 @@ Rectangle {
         if (!root.active)
             return
         // "dashboard:weather" opens the dashboard on that tab.
+        let start = ""
         if (panel.startsWith("dashboard:")) {
-            root.dashboardStart = panel.slice("dashboard:".length)
+            start = panel.slice("dashboard:".length)
             panel = "stats"
         }
         // A card in the island asking for its piece's detail: the weather opens
         // the dashboard's tab when that is the statistics design.
         if (panel === "media" || panel === "weather") {
             if (panel === "weather" && SettingsService.statsDesign === "dashboard") {
-                root.dashboardStart = "weather"
+                start = "weather"
                 panel = "stats"
             } else {
                 ModuleService.activate(panel)
@@ -255,7 +256,12 @@ Rectangle {
             DrawerService.openLauncher(DrawerService.designMode, "")
             return
         }
-        islandState.open(root.resolve(panel))
+        // The tab is for the dashboard alone, and a name that is not a tab is
+        // none: left set for the classic panel, it would stay for a later open.
+        const resolved = root.resolve(panel)
+        const tabs = ["overview", "monitor", "system", "weather"]
+        root.dashboardStart = resolved === "dashboard" && tabs.indexOf(start) >= 0 ? start : ""
+        islandState.open(resolved)
     }
 
     function close(): void {

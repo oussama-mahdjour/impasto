@@ -28,6 +28,10 @@ Item {
     property real cornerScale: 1
     // A round cover turns while the music plays; a rectangle stays as it is.
     property bool spin: false
+    // The edge the picture is decoded at, when the item is resized by an
+    // animation: the picture is not reloaded per frame. 0 follows the size,
+    // in steps of 64.
+    property int sourceEdge: 0
 
     readonly property real size: Math.min(root.width, root.height)
     readonly property bool circle: SettingsService.mediaCover === "circle"
@@ -61,8 +65,8 @@ Item {
             visible: root.ready
             fillMode: Image.PreserveAspectCrop
             asynchronous: true
-            sourceSize.width: Math.round(root.size * 2)
-            sourceSize.height: Math.round(root.size * 2)
+            sourceSize.width: root.sourceEdge > 0 ? root.sourceEdge : Math.ceil(root.size * 2 / 64) * 64
+            sourceSize.height: root.sourceEdge > 0 ? root.sourceEdge : Math.ceil(root.size * 2 / 64) * 64
 
             // Turns only a round cover that is spinning; any other stands upright.
             rotation: root.spin && root.circle ? turn.angle : 0
@@ -76,12 +80,14 @@ Item {
             width: 0
             height: 0
 
+            // Paused with the music, from where it stopped.
             NumberAnimation on angle {
                 from: 0
                 to: 360
                 duration: 24000
                 loops: Animation.Infinite
-                running: root.spin && root.circle && MediaService.playing
+                running: root.spin && root.circle
+                paused: !MediaService.playing
             }
         }
 
