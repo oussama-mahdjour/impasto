@@ -253,7 +253,7 @@ Scope {
 
         readonly property var names: ["launcher", "controls", "overview", "appearance", "palette",
             "stats", "session", "pet", "games", "notes", "board", "keys", "packages",
-            "machines", "servers", "screentime", "camera", "capture", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight"]
+            "machines", "servers", "screentime", "camera", "player", "capture", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight"]
 
         function open(name: string): string {
             // "dashboard:weather" is the dashboard on that tab.

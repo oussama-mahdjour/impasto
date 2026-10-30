@@ -26,6 +26,8 @@ Item {
     property bool equalizer: true
     // Scales the rectangle's corner: a large cover wants a smaller radius.
     property real cornerScale: 1
+    // A round cover turns while the music plays; a rectangle stays as it is.
+    property bool spin: false
 
     readonly property real size: Math.min(root.width, root.height)
     readonly property bool circle: SettingsService.mediaCover === "circle"
@@ -40,7 +42,7 @@ Item {
         active: root.circle && root.equalizer
         innerRadius: root.size / 2 + 3
         reach: Math.max(4, root.size * 0.14)
-        barWidth: root.size < 40 ? 1.5 : 2
+        barWidth: root.size < 40 ? 1.5 : root.size > 150 ? 4 : 2
     }
 
     // ClippingRectangle, because `clip` is rectangular and would square the
@@ -61,6 +63,14 @@ Item {
             asynchronous: true
             sourceSize.width: Math.round(root.size * 2)
             sourceSize.height: Math.round(root.size * 2)
+
+            RotationAnimation on rotation {
+                from: 0
+                to: 360
+                duration: 24000
+                loops: Animation.Infinite
+                running: root.spin && root.circle && MediaService.playing
+            }
         }
 
         Text {

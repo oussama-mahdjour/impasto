@@ -95,6 +95,7 @@ Rectangle {
         palette:    root.appearanceSize,
         stats:      { width: 940,  height: 614 },
         dashboard:  { width: 1040, height: root.dashboardHeight },
+        player:     { width: 980,  height: 330 },
         // Depends on the results when `launcherFits` is on.
         launcher:   { width: LauncherService.panelWidth,
                       height: LauncherService.panelHeight },
@@ -198,6 +199,7 @@ Rectangle {
         bluetooth: bluetoothDetail,
         stats: statsPanel,
         dashboard: dashboardPanel,
+        player: mediaPanel,
         overview: overviewPanel,
         session: sessionPanel,
         auth: authPanel,
@@ -710,6 +712,11 @@ Rectangle {
                 root.dashboardHeight = wanted
             }
         }
+    }
+
+    Component {
+        id: mediaPanel
+        MediaPanel { onClosed: root.close() }
     }
 
     Component {
