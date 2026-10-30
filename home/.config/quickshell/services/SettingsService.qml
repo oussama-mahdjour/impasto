@@ -114,6 +114,8 @@ Singleton {
     readonly property alias captureKind: config.captureKind
     readonly property alias lensUpload: config.lensUpload
     readonly property alias controlsClock: config.controlsClock
+    readonly property alias updatesCheckMinutes: config.updatesCheckMinutes
+    readonly property alias weatherRefreshMinutes: config.weatherRefreshMinutes
     readonly property alias tileMenuOnLabel: config.tileMenuOnLabel
     readonly property alias notesHandwriting: config.notesHandwriting
     readonly property alias deckOnEmpty: config.deckOnEmpty
@@ -374,6 +376,19 @@ Singleton {
         { id: "kanji", label: "Kanji" },
         { id: "greek", label: "Greek" }
     ]
+
+    // "Every hour", "Every 2 h", "Every 1 h 30 min", "Only when asked".
+    function periodLabel(minutes: int): string {
+        if (minutes <= 0)
+            return "Only when asked"
+        if (minutes < 60)
+            return `Every ${minutes} min`
+        const hours = Math.floor(minutes / 60)
+        const rest = minutes % 60
+        if (rest === 0)
+            return hours === 1 ? "Every hour" : `Every ${hours} h`
+        return `Every ${hours} h ${rest} min`
+    }
 
     readonly property var chipFigures: [
         { id: "off",   label: "No",       note: "No figure beside it" },
@@ -802,6 +817,10 @@ Singleton {
         // The time in the middle of the control centre's top row, so it stays
         // in view while the island is open.
         property bool controlsClock: false
+        // Minutes between two looks for package updates, and between two
+        // readings of the weather; 0 is only when asked, from a button.
+        property int updatesCheckMinutes: 60
+        property int weatherRefreshMinutes: 60
         // A tile with a menu: the icon toggles it and the rest of the tile
         // opens the menu, so reaching for the menu does not switch it off.
         property bool tileMenuOnLabel: false

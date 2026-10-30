@@ -421,9 +421,8 @@ FocusScope {
 
     // ── SYSTEM ──────────────────────────────────────────────────────────────
     //
-    // For display only: the updates are the hourly-polled list the updates
-    // module reads, and the machine is what the control centre's about card
-    // reads.
+    // The updates, as two lists in two colours with their own buttons, and
+    // this machine as a fastfetch with the distribution's logo.
 
     Component {
         id: system
@@ -468,7 +467,9 @@ FocusScope {
 
                 Text {
                     text: UpdatesService.checking ? Tr.t("Checking…")
-                        : UpdatesService.checkedAt > 0 ? `${Tr.t("Checked")} ${UpdatesService.age}` : Tr.t("Not checked yet")
+                        : UpdatesService.checkedAt > 0
+                            ? `${Tr.t("Checked")} ${UpdatesService.age}${UpdatesService.every !== "" ? " · " + Tr.t(UpdatesService.every).toLowerCase() : ""}`
+                            : Tr.t("Not checked yet")
                     font.family: Theme.fontFamily
                     font.pixelSize: Theme.fontSizeLabel
                     color: Theme.textMuted
@@ -494,6 +495,8 @@ FocusScope {
                             ]
 
                             Column {
+                                id: group
+
                                 required property var modelData
 
                                 width: lists.width
@@ -503,15 +506,15 @@ FocusScope {
                                 Text {
                                     height: 26
                                     verticalAlignment: Text.AlignBottom
-                                    text: `${modelData.glyph}  ${modelData.name} · ${modelData.entries.length}`
+                                    text: `${group.modelData.glyph}  ${group.modelData.name} · ${group.modelData.entries.length}`
                                     font.family: Theme.fontFamily
                                     font.pixelSize: Theme.fontSizeSmall
                                     font.weight: Font.DemiBold
-                                    color: modelData.tint
+                                    color: group.modelData.tint
                                 }
 
                                 Repeater {
-                                    model: parent.modelData.entries
+                                    model: group.modelData.entries
 
                                     RowLayout {
                                         required property var modelData
@@ -519,6 +522,14 @@ FocusScope {
                                         width: lists.width
                                         height: 22
                                         spacing: 8
+
+                                        // The source's colour, down the side of each line.
+                                        Rectangle {
+                                            Layout.preferredWidth: 3
+                                            Layout.preferredHeight: 14
+                                            radius: 1.5
+                                            color: group.modelData.tint
+                                        }
 
                                         Text {
                                             Layout.fillWidth: true
@@ -533,7 +544,7 @@ FocusScope {
                                             text: modelData.to
                                             font.family: Theme.fontMono
                                             font.pixelSize: Theme.fontSizeLabel
-                                            color: Theme.textMuted
+                                            color: group.modelData.tint
                                         }
                                     }
                                 }
@@ -541,46 +552,119 @@ FocusScope {
                         }
                     }
                 }
+
+                RowLayout {
+                    spacing: 8
+
+                    PillButton {
+                        text: UpdatesService.checking ? Tr.t("Checking…") : Tr.t("Check now")
+                        icon: "󰑐"
+                        enabled: !UpdatesService.checking
+                        onClicked: UpdatesService.refresh()
+                    }
+
+                    // The packages panel's own upgrade: the AUR helper if there
+                    // is one, else pacman, in a terminal that stays open.
+                    PillButton {
+                        text: Tr.t("Update in a terminal")
+                        icon: "󰆍"
+                        active: UpdatesService.count > 0
+                        onClicked: {
+                            root.closed()
+                            PackagesService.upgrade()
+                        }
+                    }
+                }
             }
 
-            // The facts of this machine, one to a line.
+            // This machine as a fastfetch: the logo, who and where, then one
+            // fact to a line, each in its own colour.
             DashCard {
                 id: machineCard
 
                 readonly property var disk: StatsService.disks.find(entry => entry.target === "/")
+                readonly property var tints: [Theme.accent, Theme.indicatorTimer, Theme.indicatorGood,
+                                              Theme.indicatorWarn, Theme.indicatorBad]
                 readonly property var facts: [
-                    { glyph: "󰣇", key: Tr.t("OS"), value: MachineService.os },
+                    { glyph: "󰌢", key: Tr.t("Host"), value: MachineService.model },
                     { glyph: "󰒓", key: Tr.t("Kernel"), value: MachineService.kernel },
                     { glyph: "󰅐", key: Tr.t("Uptime"), value: StatsService.uptime > 0 ? StatsService.duration(StatsService.uptime) : "" },
                     { glyph: "󰏖", key: Tr.t("Packages"), value: MachineService.packages !== null ? String(MachineService.packages) : "" },
                     { glyph: "󰆍", key: Tr.t("Shell"), value: MachineService.shell },
                     { glyph: "󱂬", key: Tr.t("WM"), value: MachineService.wm },
                     { glyph: "󰻠", key: Tr.t("CPU"), value: StatsService.cpuModel }
-                ].concat([
+                ].concat(MachineService.gpus.map((name, index) =>
+                    ({ glyph: "󰢮", key: MachineService.gpus.length > 1 ? `${Tr.t("GPU")} ${index + 1}` : Tr.t("GPU"), value: name })))
+                 .concat([
                     { glyph: "󰍛", key: Tr.t("Memory"), value: StatsService.memoryTotal > 0
                         ? `${StatsService.bytes(StatsService.memoryUsed)} / ${StatsService.bytes(StatsService.memoryTotal)}` : "" },
                     { glyph: "󰋊", key: Tr.t("Disk") + " (/)", value: machineCard.disk
                         ? `${StatsService.bytes(machineCard.disk.used)} / ${StatsService.bytes(machineCard.disk.total)}` : "" },
-                    { glyph: "󰁹", key: Tr.t("Battery"), value: BatteryService.available
-                        ? `${BatteryService.percent} %` + (BatteryService.healthKnown ? ` · ${Tr.t("health")} ${BatteryService.health} %` : "") : "" },
+                    { glyph: "󰁹", key: Tr.t("Battery"), value: BatteryService.available ? `${BatteryService.percent} %` : "" },
                     { glyph: "󰩟", key: Tr.t("Address"), value: SystemMonitorService.addresses
                         .map(entry => entry.address.split("/")[0]).join(", ") }
                 ]).filter(fact => fact.value)
 
                 title: Tr.t("This machine")
-                Layout.preferredWidth: 360
+                Layout.preferredWidth: 380
                 Layout.fillHeight: true
 
-                Text {
+                RowLayout {
                     Layout.fillWidth: true
                     Layout.bottomMargin: 6
-                    textFormat: Text.StyledText
-                    text: `<font color="${Theme.accent}">${AccountService.user}</font>@${MachineService.host}`
-                    elide: Text.ElideRight
-                    font.family: Theme.fontMono
-                    font.pixelSize: Theme.fontSizeRegular
-                    font.weight: Font.DemiBold
-                    color: Theme.text
+                    spacing: 12
+
+                    Item {
+                        Layout.preferredWidth: 52
+                        Layout.preferredHeight: 52
+
+                        Image {
+                            id: logoImage
+
+                            anchors.fill: parent
+                            source: MachineService.logo !== "" ? `file://${MachineService.logo}` : ""
+                            sourceSize.width: 104
+                            sourceSize.height: 104
+                            fillMode: Image.PreserveAspectFit
+                            asynchronous: true
+                            visible: status === Image.Ready
+                        }
+
+                        // Without a logo file, the Arch mark.
+                        Text {
+                            anchors.centerIn: parent
+                            visible: !logoImage.visible
+                            text: "󰣇"
+                            font.family: Theme.fontMono
+                            font.pixelSize: 40
+                            color: Theme.accent
+                        }
+                    }
+
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 2
+
+                        Text {
+                            Layout.fillWidth: true
+                            textFormat: Text.StyledText
+                            text: `<font color="${Theme.accent}">${AccountService.user}</font>@<font color="${Theme.indicatorGood}">${MachineService.host}</font>`
+                            elide: Text.ElideRight
+                            font.family: Theme.fontMono
+                            font.pixelSize: Theme.fontSizeRegular
+                            font.weight: Font.DemiBold
+                            color: Theme.text
+                        }
+
+                        Text {
+                            Layout.fillWidth: true
+                            text: MachineService.os
+                            elide: Text.ElideRight
+                            font.family: Theme.fontFamily
+                            font.pixelSize: Theme.fontSizeSmall
+                            color: Theme.textMuted
+                        }
+                    }
                 }
 
                 Repeater {
@@ -588,6 +672,7 @@ FocusScope {
 
                     RowLayout {
                         required property var modelData
+                        required property int index
 
                         Layout.fillWidth: true
                         spacing: 8
@@ -598,7 +683,7 @@ FocusScope {
                             text: modelData.glyph
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.accent
+                            color: machineCard.tints[index % machineCard.tints.length]
                         }
 
                         Text {
@@ -606,7 +691,8 @@ FocusScope {
                             text: modelData.key
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeSmall
-                            color: Theme.textMuted
+                            font.weight: Font.DemiBold
+                            color: machineCard.tints[index % machineCard.tints.length]
                         }
 
                         Text {
@@ -641,6 +727,24 @@ FocusScope {
 
             DashCard {
                 title: WeatherService.place !== "" ? `Now · ${WeatherService.place}, ${WeatherService.region}` : "Now"
+                corner: [
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: WeatherService.refreshing ? Tr.t("Syncing…")
+                            : WeatherService.available
+                                ? `${Tr.t("Read")} ${WeatherService.age} · ${Tr.t(SettingsService.periodLabel(SettingsService.weatherRefreshMinutes)).toLowerCase()}`
+                                : ""
+                        font.family: Theme.fontFamily
+                        font.pixelSize: Theme.fontSizeLabel
+                        color: Theme.textMuted
+                    },
+                    PillButton {
+                        text: Tr.t("Sync now")
+                        icon: "󰑐"
+                        enabled: !WeatherService.refreshing
+                        onClicked: WeatherService.refresh()
+                    }
+                ]
                 Layout.row: 0
                 Layout.column: 0
                 Layout.columnSpan: 2

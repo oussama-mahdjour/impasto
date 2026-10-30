@@ -22,7 +22,11 @@ import Quickshell.Io
 Singleton {
     id: root
 
-    readonly property int pollInterval: 900000
+    // Minutes between two readings (`SettingsService.weatherRefreshMinutes`); 0
+    // is only when asked. Each reading tells wttr.in the connection's address,
+    // so nothing is read while nothing shows the weather.
+    readonly property int refreshMinutes: SettingsService.weatherRefreshMinutes
+    readonly property int pollInterval: root.refreshMinutes * 60000
 
     property int watchers: 0
     property bool available: false
@@ -108,9 +112,10 @@ Singleton {
 
     function subscribe(): void {
         root.watchers += 1
-        // Only if never read, read for another place or older than ten minutes.
+        // Only if never read, read for another place or older than the period
+        // (never, with "only when asked").
         const minutes = (new Date().getTime() - root.readAt.getTime()) / 60000
-        if (!root.available || root.stale || minutes > 10)
+        if (!root.available || root.stale || (root.refreshMinutes > 0 && minutes > root.refreshMinutes))
             root.refresh()
     }
 
@@ -141,9 +146,9 @@ Singleton {
     }
 
     readonly property Timer poller: Timer {
-        interval: root.pollInterval
+        interval: Math.max(60000, root.pollInterval)
         repeat: true
-        running: root.watchers > 0
+        running: root.watchers > 0 && root.pollInterval > 0
         onTriggered: root.refresh()
     }
 
@@ -180,6 +185,8 @@ Singleton {
     // whichever order those arrive; only then does a queued one start, so
     // the reading is recorded against the place it was asked for.
     property int unsettled: 0
+    // A reading is on its way, for the button that asks for one.
+    readonly property bool refreshing: root.query.running || root.unsettled > 0
 
     function settle(): void {
         root.unsettled = Math.max(0, root.unsettled - 1)
