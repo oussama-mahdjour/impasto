@@ -433,6 +433,9 @@ FocusScope {
             Component.onCompleted: {
                 UpdatesService.subscribe()
                 MachineService.refresh()
+                // Which AUR helper there is, so the update button uses it.
+                if (!PackagesService.loaded)
+                    PackagesService.load()
             }
             Component.onDestruction: UpdatesService.release()
 
