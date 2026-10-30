@@ -236,6 +236,8 @@ FocusScope {
                 DashCard {
                     title: WeatherService.place !== "" ? `Weather · ${WeatherService.place}` : "Weather"
                     Layout.fillWidth: true
+                    // The column's height when Claude's card is not under it.
+                    Layout.fillHeight: true
                     Layout.preferredHeight: 170
 
                     RowLayout {
