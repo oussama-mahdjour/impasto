@@ -89,8 +89,12 @@ Item {
             // Performance is offered only where the machine has it.
             SegmentedControl {
                 Layout.topMargin: 4
+                Layout.fillWidth: true
+                stretch: true
+                labelled: true
+                implicitHeight: 40
                 options: [
-                    { id: "saver", label: "Power saver", icon: "󰌪" },
+                    { id: "saver", label: "Saver", icon: "󰌪" },
                     { id: "balanced", label: "Balanced", icon: "󰗑" }
                 ].concat(PowerProfiles.hasPerformanceProfile
                     ? [{ id: "performance", label: "Performance", icon: "󰓅" }] : [])
