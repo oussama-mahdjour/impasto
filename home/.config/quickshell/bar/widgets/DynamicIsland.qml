@@ -226,7 +226,14 @@ Rectangle {
         return panel === "stats" && SettingsService.statsDesign === "dashboard" ? "dashboard" : panel
     }
 
+    // The launcher key, the bar's button and the dock's all end up here; with
+    // another design they open the drawer from the bottom edge instead.
+    readonly property bool launcherInDrawer: SettingsService.launcherDesign !== "island"
+
     function open(panel: string): void {
+        // Only the live island answers, as `IslandState` enforces.
+        if (!root.active)
+            return
         // "dashboard:weather" opens the dashboard on that tab; so does a tap on
         // the weather card, when the statistics are the dashboard.
         let start = ""
@@ -239,6 +246,13 @@ Rectangle {
         } else if (panel === "media" || panel === "weather") {
             // A card in the island asking for its piece's detail.
             ModuleService.activate(panel)
+            return
+        }
+        // Whatever the drawers hold, the island takes over.
+        DrawerService.closeAll()
+        if (panel === "launcher" && root.launcherInDrawer) {
+            islandState.close()
+            DrawerService.openLauncher(DrawerService.designMode, "")
             return
         }
         // The tab is for the dashboard alone, and a name that is not a tab is
@@ -255,6 +269,14 @@ Rectangle {
 
     // Shortcuts toggle: the same key opens and closes.
     function toggle(panel: string): void {
+        if (panel === "launcher" && root.launcherInDrawer) {
+            // The drawer closes itself when asked for again.
+            if (root.active) {
+                islandState.close()
+                DrawerService.openLauncher(DrawerService.designMode, "")
+            }
+            return
+        }
         if (islandState.openPanel === root.resolve(panel))
             root.close()
         else
