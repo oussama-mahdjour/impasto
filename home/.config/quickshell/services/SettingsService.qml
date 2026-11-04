@@ -75,6 +75,7 @@ Singleton {
     readonly property alias dockAutohide: config.dockAutohide
     readonly property alias dockLauncher: config.dockLauncher
     readonly property alias weatherPlace: config.weatherPlace
+    readonly property alias statsDesign: config.statsDesign
     readonly property alias githubUser: config.githubUser
     readonly property alias markets: config.markets
     readonly property alias petStyle: config.petStyle
@@ -105,6 +106,8 @@ Singleton {
     readonly property alias lensUpload: config.lensUpload
     readonly property alias controlsClock: config.controlsClock
     readonly property alias tileMenuOnLabel: config.tileMenuOnLabel
+    readonly property alias updatesCheckMinutes: config.updatesCheckMinutes
+    readonly property alias weatherRefreshMinutes: config.weatherRefreshMinutes
     readonly property alias notesHandwriting: config.notesHandwriting
     readonly property alias deckOnEmpty: config.deckOnEmpty
     readonly property alias spectrumOnEmpty: config.spectrumOnEmpty
@@ -360,6 +363,19 @@ Singleton {
         { id: "kanji", label: "Kanji" },
         { id: "greek", label: "Greek" }
     ]
+
+    // "Every hour", "Every 2 h", "Every 1 h 30 min", "Only when asked".
+    function periodLabel(minutes: int): string {
+        if (minutes <= 0)
+            return "Only when asked"
+        if (minutes < 60)
+            return `Every ${minutes} min`
+        const hours = Math.floor(minutes / 60)
+        const rest = minutes % 60
+        if (rest === 0)
+            return hours === 1 ? "Every hour" : `Every ${hours} h`
+        return `Every ${hours} h ${rest} min`
+    }
 
     readonly property var chipFigures: [
         { id: "off",   label: "No",       note: "No figure beside it" },
@@ -760,6 +776,10 @@ Singleton {
         // A tile with a menu: the icon toggles it and the rest of the tile
         // opens the menu, so reaching for the menu does not switch it off.
         property bool tileMenuOnLabel: false
+        // Minutes between two looks for package updates, and between two
+        // readings of the weather; 0 is only when asked, from a button.
+        property int updatesCheckMinutes: 60
+        property int weatherRefreshMinutes: 60
 
         // Note bodies in the handwriting font instead of the UI font.
         property bool notesHandwriting: true
@@ -964,6 +984,11 @@ Singleton {
         // Anything wttr.in accepts: a city, postcode or airport code. Empty
         // lets wttr.in geolocate by IP, which can be tens of kilometres off.
         property string weatherPlace: ""
+
+        // Which panel the stats shortcut and the stats button open: `classic`
+        // is the processor, memory and network cards; `dashboard` adds the
+        // calendar, weather and a monitor with the machine's details.
+        property string statsDesign: "classic"
 
         // GitHub user for the contributions widget; empty draws nothing.
         property string githubUser: ""
