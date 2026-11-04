@@ -43,6 +43,7 @@ Singleton {
     readonly property alias islandActivities: config.islandActivities
     readonly property alias chipShape: config.chipShape
     readonly property alias chipFigure: config.chipFigure
+    readonly property alias chipHover: config.chipHover
     readonly property alias desktopWidgets: config.desktopWidgets
     readonly property alias desktopTheme: config.desktopTheme
     readonly property alias desktopOpacity: config.desktopOpacity
@@ -356,6 +357,13 @@ Singleton {
         { id: "on",    label: "Always",   note: "The figure always beside it" }
     ]
 
+    // What resting the pointer on a piece does while its figure is "On hover":
+    // the piece widens, or a small card drops from the bar under it.
+    readonly property var chipHovers: [
+        { id: "widen", label: "Inline", note: "The figure opens beside the piece" },
+        { id: "card", label: "Pill", note: "A small pill drops from the bar under the piece" }
+    ]
+
     // No writes until the file has been read: `onAdapterUpdated` writes the
     // whole adapter, so an early `set` would overwrite every stored preference
     // with defaults. A second shell instance sharing the file makes the race
@@ -637,6 +645,8 @@ Singleton {
         // One of `chipShapes` and one of `chipFigures`.
         property string chipShape: "icon"
         property string chipFigure: "on"
+        // One of `chipHovers`.
+        property string chipHover: "widen"
 
         property int launcherResults: 9
 
