@@ -87,6 +87,7 @@ Singleton {
     readonly property alias trayHidden: config.trayHidden
     readonly property alias launcherBareMath: config.launcherBareMath
     readonly property alias notificationRules: config.notificationRules
+    readonly property alias osk: config.osk
     readonly property alias dockRunning: config.dockRunning
     readonly property alias dockEverywhere: config.dockEverywhere
     readonly property alias dockAutohide: config.dockAutohide
@@ -1068,6 +1069,9 @@ Singleton {
         // Per application, by the name it notifies as: "mute", "silent" or
         // "popup" (see `NotificationService.ruleFor`). None is the default.
         property var notificationRules: ({})
+        // An on-screen keyboard along the bottom edge, toggled by its key or
+        // `qs ipc call osk toggle`. It types through ydotool (and ydotoold).
+        property bool osk: false
 
         // Also show running applications that aren't pinned.
         property bool dockRunning: true

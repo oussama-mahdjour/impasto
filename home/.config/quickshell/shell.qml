@@ -25,6 +25,7 @@ import "./desktop"
 import "./dock"
 import "./frame"
 import "./lock"
+import "./osk"
 import "./services"
 import "./settings"
 import "./theme"
@@ -298,6 +299,8 @@ ShellRoot {
         }
     }
 
+    Osk {}
+
     // A normal window rather than an island panel, so the island stays
     // visible while its settings change.
     SettingsWindow {
@@ -528,6 +531,12 @@ ShellRoot {
         name: "zen"
         description: "Hide or show the bar"
         onPressed: SettingsService.set("barHidden", !SettingsService.barHidden)
+    }
+
+    GlobalShortcut {
+        name: "osk"
+        description: "Show or hide the on-screen keyboard"
+        onPressed: OskService.toggle()
     }
 
     GlobalShortcut {
