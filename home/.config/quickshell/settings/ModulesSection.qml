@@ -103,6 +103,18 @@ SettingsSection {
             }
         }
 
+        SettingRow {
+            label: Tr.t("Health card")
+            reading: SettingsService.dashboardHealth
+                ? Tr.t("Failed units and journal errors on the System tab")
+                : Tr.t("The System tab shows the updates and this machine")
+
+            ToggleSwitch {
+                checked: SettingsService.dashboardHealth
+                onToggled: checked => SettingsService.set("dashboardHealth", checked)
+            }
+        }
+
         SettingField {
             label: Tr.t("Machine logo")
             reading: Tr.t("An image path; empty is the distribution's own")

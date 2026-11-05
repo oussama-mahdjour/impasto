@@ -78,6 +78,7 @@ Singleton {
     readonly property alias dockOpacity: config.dockOpacity
     readonly property alias dockGround: config.dockGround
     readonly property alias terminalGround: config.terminalGround
+    readonly property alias dashboardHealth: config.dashboardHealth
     readonly property alias weatherUnits: config.weatherUnits
     readonly property alias systemLogo: config.systemLogo
     readonly property alias islandSpectrum: config.islandSpectrum
@@ -1038,6 +1039,10 @@ Singleton {
 
         // kitty's ground, as `surfaceStyle`.
         property string terminalGround: "glass"
+
+        // A Health card on the dashboard's System tab: failed units and this
+        // boot's journal errors.
+        property bool dashboardHealth: false
 
         // "m" (°C, km/h) or "u" (°F, mph). Read again on the next reading.
         property string weatherUnits: "m"
