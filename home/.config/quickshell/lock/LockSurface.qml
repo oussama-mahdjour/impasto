@@ -293,28 +293,49 @@ Item {
         onSubmitted: password => root.submitted(password)
     }
 
-    // Caps Lock, over the account: read only on a lock with the wallpaper
-    // behind it.
-    Rectangle {
+    // Caps Lock and the keyboard layout, over the account.
+    Row {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.bottom: account.top
         anchors.bottomMargin: 14
-        visible: LockService.privateBackground && LockService.capsLock
-        width: capsLabel.implicitWidth + 24
-        height: 28
-        radius: height / 2
-        color: Theme.indicatorWarn
+        spacing: 10
         opacity: root.awake * root.held
 
-        Text {
-            id: capsLabel
+        Rectangle {
+            visible: LockService.capsLock
+            width: capsLabel.implicitWidth + 24
+            height: 28
+            radius: 14
+            color: Theme.indicatorWarn
 
-            anchors.centerIn: parent
-            text: `󰪛  ${Tr.t("Caps Lock is on")}`
-            font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSizeSmall
-            font.weight: Font.DemiBold
+            Text {
+                id: capsLabel
+
+                anchors.centerIn: parent
+                text: "󰪛  " + Tr.t("Caps Lock")
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSizeSmall
+                font.weight: Font.DemiBold
+                color: "#1c1c1e"
+            }
+        }
+
+        Rectangle {
+            visible: LockService.keymap !== ""
+            width: mapLabel.implicitWidth + 24
+            height: 28
+            radius: 14
             color: Theme.island
+
+            Text {
+                id: mapLabel
+
+                anchors.centerIn: parent
+                text: `󰌌  ${LockService.keymap}`
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSizeSmall
+                color: Theme.text
+            }
         }
     }
 

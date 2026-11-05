@@ -339,31 +339,36 @@ Singleton {
         }
     }
 
-    // ── CAPS LOCK ───────────────────────────────────────────────────────────
-
-    // From the compositor, since Qt does not report it. Read each second, and
-    // only while a lock with the wallpaper behind it is up, where it shows.
+    // ── KEYBOARD ────────────────────────────────────────────────────────────
+    //
+    // Caps Lock and the layout, from the main keyboard, read every second
+    // while locked: a password typed on the wrong layout or with Caps Lock on
+    // is the usual reason for a refusal.
     property bool capsLock: false
+    property string keymap: ""
 
-    readonly property Process capsReader: Process {
+    readonly property Process keyboardReader: Process {
         command: ["hyprctl", "devices", "-j"]
         stdout: StdioCollector {
             onStreamFinished: {
                 try {
-                    root.capsLock = (JSON.parse(text).keyboards ?? []).some(board => board.capsLock)
+                    const keyboards = JSON.parse(text).keyboards ?? []
+                    const main = keyboards.find(keyboard => keyboard.main) ?? keyboards[0]
+                    root.capsLock = main?.capsLock ?? false
+                    root.keymap = main?.active_keymap ?? ""
                 } catch (error) {
-                    root.capsLock = false
+                    console.warn("Lock: cannot read the keyboards:", error)
                 }
             }
         }
     }
 
-    readonly property Timer capsPoll: Timer {
+    readonly property Timer keyboardPoll: Timer {
         interval: 1000
         repeat: true
         triggeredOnStart: true
-        running: root.locked && root.privateBackground
-        onTriggered: root.capsReader.running = true
+        running: root.locked
+        onTriggered: root.keyboardReader.running = true
     }
 
     // ── FACE ────────────────────────────────────────────────────────────────
