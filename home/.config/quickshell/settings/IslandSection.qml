@@ -102,6 +102,16 @@ SettingsSection {
             }
 
             SettingRow {
+                label: Tr.t("Music on the resting island")
+                reading: SettingsService.islandSpectrum ? Tr.t("Moving with the sound") : Tr.t("A still note")
+
+                ToggleSwitch {
+                    checked: SettingsService.islandSpectrum
+                    onToggled: checked => SettingsService.set("islandSpectrum", checked)
+                }
+            }
+
+            SettingRow {
                 label: Tr.t("Readout over full-screen windows")
                 reading: SettingsService.osdOverFullscreen
                     ? Tr.t("The volume and brightness readout shows over a full-screen window")

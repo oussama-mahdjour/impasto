@@ -80,6 +80,7 @@ Singleton {
     readonly property alias terminalGround: config.terminalGround
     readonly property alias weatherUnits: config.weatherUnits
     readonly property alias systemLogo: config.systemLogo
+    readonly property alias islandSpectrum: config.islandSpectrum
     readonly property alias themeTargets: config.themeTargets
     readonly property alias volumeMax: config.volumeMax
     readonly property alias trayHidden: config.trayHidden
@@ -1042,6 +1043,9 @@ Singleton {
         // Path of an image for the dashboard's machine card; empty is the
         // distribution's logo.
         property string systemLogo: ""
+        // The resting island shows the playing music as moving bars (the
+        // audio analyser runs for them); off, a still note.
+        property bool islandSpectrum: true
 
         // The applications the palette is written to, by the names in
         // `theme_manager.py` (`PALETTE_WRITERS`). Null is all of them.
