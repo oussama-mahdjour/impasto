@@ -52,7 +52,7 @@ PanelWindow {
     // full-screen window, which covers the top layer; the bar goes back down
     // once it is answered or the readout is gone.
     WlrLayershell.layer: island.state.openPanel === "auth" && island.expanded
-        || island.state.layer === island.state.layerOsd
+        || SettingsService.osdOverFullscreen && island.state.layer === island.state.layerOsd
         ? WlrLayer.Overlay : WlrLayer.Top
     // What is drawn here takes the island's glass (`Theme.surfaceIn`).
     readonly property bool glassy: true
