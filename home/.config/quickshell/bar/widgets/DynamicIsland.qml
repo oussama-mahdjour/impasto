@@ -111,6 +111,7 @@ Rectangle {
         // A program asking for root (`PolkitService`).
         auth:       { width: 460,  height: 236 },
         machines:   { width: 860,  height: 580 },
+        agenda:     { width: 460,  height: 520 },
         // A row per server, from two to six before it scrolls.
         servers:    { width: ServersService.panelWidth, height: ServersService.panelHeight },
         screentime: { width: 940,  height: 614 },
@@ -205,6 +206,7 @@ Rectangle {
         session: sessionPanel,
         auth: authPanel,
         machines: machinesPanel,
+        agenda: agendaPanel,
         servers: serversPanel,
         screentime: screenTimePanel,
         camera: cameraPanel,
@@ -233,6 +235,9 @@ Rectangle {
     function open(panel: string): void {
         // Only the live island answers, as `IslandState` enforces.
         if (!root.active)
+            return
+        // The agenda is a setting; off, it is not a panel.
+        if (panel === "agenda" && !SettingsService.agenda)
             return
         // "dashboard:weather" opens the dashboard on that tab; so does a tap on
         // the weather card, when the statistics are the dashboard.
@@ -765,6 +770,11 @@ Rectangle {
     Component {
         id: machinesPanel
         MachinesPanel { onClosed: root.close() }
+    }
+
+    Component {
+        id: agendaPanel
+        AgendaPanel { onClosed: root.close() }
     }
 
     Component {

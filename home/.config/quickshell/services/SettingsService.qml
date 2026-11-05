@@ -88,6 +88,8 @@ Singleton {
     readonly property alias launcherBareMath: config.launcherBareMath
     readonly property alias notificationRules: config.notificationRules
     readonly property alias osk: config.osk
+    readonly property alias agenda: config.agenda
+    readonly property alias agendaKhalConfig: config.agendaKhalConfig
     readonly property alias dockRunning: config.dockRunning
     readonly property alias dockEverywhere: config.dockEverywhere
     readonly property alias dockAutohide: config.dockAutohide
@@ -1072,6 +1074,12 @@ Singleton {
         // An on-screen keyboard along the bottom edge, toggled by its key or
         // `qs ipc call osk toggle`. It types through ydotool (and ydotoold).
         property bool osk: false
+        // An agenda panel with the next two weeks from khal, opened by the
+        // agenda shortcut or `qs ipc call panel open agenda`.
+        property bool agenda: false
+
+        // khal's config file; empty is khal's own.
+        property string agendaKhalConfig: ""
 
         // Also show running applications that aren't pinned.
         property bool dockRunning: true
