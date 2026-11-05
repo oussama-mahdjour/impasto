@@ -80,6 +80,7 @@ Singleton {
     readonly property alias terminalGround: config.terminalGround
     readonly property alias themeTargets: config.themeTargets
     readonly property alias volumeMax: config.volumeMax
+    readonly property alias trayHidden: config.trayHidden
     readonly property alias dockRunning: config.dockRunning
     readonly property alias dockEverywhere: config.dockEverywhere
     readonly property alias dockAutohide: config.dockAutohide
@@ -1039,6 +1040,9 @@ Singleton {
         // The most the volume sliders reach, in percent: 100, or 150 for
         // quiet sources. The volume keys are Hyprland's (`wpctl -l`).
         property int volumeMax: 100
+        // Tray items left out of the bar, by the id the application gives
+        // them (`TrayService.all`). Empty shows every one.
+        property var trayHidden: []
 
         // Also show running applications that aren't pinned.
         property bool dockRunning: true
