@@ -101,6 +101,17 @@ SettingsSection {
                 }
             }
 
+            SettingRow {
+                label: Tr.t("Readout over full-screen windows")
+                reading: SettingsService.osdOverFullscreen
+                    ? Tr.t("The volume and brightness readout shows over a full-screen window")
+                    : Tr.t("Hidden behind a full-screen window")
+
+                ToggleSwitch {
+                    checked: SettingsService.osdOverFullscreen
+                    onToggled: checked => SettingsService.set("osdOverFullscreen", checked)
+                }
+            }
         }
 
         // ── CLOCK ───────────────────────────────────────────────────────────

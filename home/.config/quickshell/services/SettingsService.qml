@@ -33,6 +33,7 @@ Singleton {
     readonly property alias barSideMargin: config.barSideMargin
     readonly property alias barStyle: config.barStyle
     readonly property alias barEverywhere: config.barEverywhere
+    readonly property alias osdOverFullscreen: config.osdOverFullscreen
     readonly property alias barHidden: config.barHidden
     readonly property alias screenCorners: config.screenCorners
     readonly property alias frameMode: config.frameMode
@@ -619,6 +620,11 @@ Singleton {
         // A bar on every screen, or only on the one being worked on. The
         // surface is on every screen either way: this is whether it paints.
         property bool barEverywhere: true
+
+        // Show the volume and brightness readout over a full-screen window.
+        // The whole bar surface rises with it, so clicks at the top edge of
+        // the window land on the bar while the readout shows.
+        property bool osdOverFullscreen: false
 
         // Zen: the bar off the screen and its band given to the windows; the
         // island still comes down for what it has to show.
