@@ -78,6 +78,7 @@ Singleton {
     readonly property alias dockOpacity: config.dockOpacity
     readonly property alias dockGround: config.dockGround
     readonly property alias terminalGround: config.terminalGround
+    readonly property alias weatherUnits: config.weatherUnits
     readonly property alias themeTargets: config.themeTargets
     readonly property alias volumeMax: config.volumeMax
     readonly property alias trayHidden: config.trayHidden
@@ -1034,6 +1035,9 @@ Singleton {
 
         // kitty's ground, as `surfaceStyle`.
         property string terminalGround: "glass"
+
+        // "m" (°C, km/h) or "u" (°F, mph). Read again on the next reading.
+        property string weatherUnits: "m"
 
         // The applications the palette is written to, by the names in
         // `theme_manager.py` (`PALETTE_WRITERS`). Null is all of them.
