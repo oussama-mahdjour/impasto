@@ -834,9 +834,10 @@ Singleton {
         // opens the menu, so reaching for the menu does not switch it off.
         property bool tileMenuOnLabel: false
         // Minutes between two looks for package updates, and between two
-        // readings of the weather; 0 is only when asked, from a button.
-        property int updatesCheckMinutes: 60
-        property int weatherRefreshMinutes: 60
+        // readings of the weather; 0 is only when asked, from a button. The
+        // defaults are the periods the shell kept before these were settings.
+        property int updatesCheckMinutes: 30
+        property int weatherRefreshMinutes: 15
 
         // Note bodies in the handwriting font instead of the UI font.
         property bool notesHandwriting: true

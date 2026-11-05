@@ -33,8 +33,8 @@ Flickable {
     clip: true
     boundsBehavior: Flickable.StopAtBounds
 
-    Component.onCompleted: SystemMonitorService.subscribe()
-    Component.onDestruction: SystemMonitorService.release()
+    Component.onCompleted: SystemMonitorService.subscribeHardware()
+    Component.onDestruction: SystemMonitorService.releaseHardware()
 
     function percent(fraction: real): string {
         return `${Math.round(fraction * 100)} %`
@@ -173,7 +173,11 @@ Flickable {
         }
 
         Repeater {
-            model: SystemMonitorService.gpus
+            // Kept across samples, so a card's sparkline is not rebuilt every 3 s.
+            model: ScriptModel {
+                objectProp: "name"
+                values: SystemMonitorService.gpus
+            }
 
             DashCard {
                 id: gpuCard
@@ -246,7 +250,10 @@ Flickable {
             Layout.alignment: Qt.AlignTop
 
             Repeater {
-                model: SystemMonitorService.disks
+                model: ScriptModel {
+                    objectProp: "mount"
+                    values: SystemMonitorService.disks
+                }
 
                 Level {
                     required property var modelData
@@ -294,10 +301,13 @@ Flickable {
             }
 
             Repeater {
-                model: [
-                    { name: "Wi-Fi", state: NetworkService.connectionName || "—", rx: SystemMonitorService.wifiRx, tx: SystemMonitorService.wifiTx },
-                    { name: "Ethernet", state: SystemMonitorService.ethRxTotal > 0 ? "" : Tr.t("Disconnected"), rx: SystemMonitorService.ethRx, tx: SystemMonitorService.ethTx }
-                ]
+                model: ScriptModel {
+                    objectProp: "name"
+                    values: [
+                        { name: "Wi-Fi", state: NetworkService.connectionName || "—", rx: SystemMonitorService.wifiRx, tx: SystemMonitorService.wifiTx },
+                        { name: "Ethernet", state: SystemMonitorService.ethRxTotal > 0 ? "" : Tr.t("Disconnected"), rx: SystemMonitorService.ethRx, tx: SystemMonitorService.ethTx }
+                    ]
+                }
 
                 RowLayout {
                     required property var modelData
