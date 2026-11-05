@@ -81,6 +81,7 @@ Singleton {
     readonly property alias themeTargets: config.themeTargets
     readonly property alias volumeMax: config.volumeMax
     readonly property alias trayHidden: config.trayHidden
+    readonly property alias launcherBareMath: config.launcherBareMath
     readonly property alias dockRunning: config.dockRunning
     readonly property alias dockEverywhere: config.dockEverywhere
     readonly property alias dockAutohide: config.dockAutohide
@@ -1043,6 +1044,9 @@ Singleton {
         // Tray items left out of the bar, by the id the application gives
         // them (`TrayService.all`). Empty shows every one.
         property var trayHidden: []
+        // Work out a sum typed without the calculator's prefix, as the
+        // first row of the list.
+        property bool launcherBareMath: false
 
         // Also show running applications that aren't pinned.
         property bool dockRunning: true

@@ -287,6 +287,11 @@ QtObject {
                     subtitle: Tr.t("Stays open at the end"),
                     argv: root.terminalCommand(heldScript).concat(["sh", query]) })
         return rows
+        // A sum typed without the calculator's prefix. It needs a digit and an
+        // operator, so a bare number or a name is not taken for one.
+        const sum = SettingsService.launcherBareMath && /\d/.test(raw) && /[+\-*/%]/.test(raw)
+            ? root.calculate(raw) : []
+        return sum.concat(root.rank(term).slice(0, root.maxResults))
     }
 
     // All applications matching `term`, sorted by:
