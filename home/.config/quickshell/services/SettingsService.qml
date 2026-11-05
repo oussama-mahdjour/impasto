@@ -85,6 +85,7 @@ Singleton {
     readonly property alias volumeMax: config.volumeMax
     readonly property alias trayHidden: config.trayHidden
     readonly property alias launcherBareMath: config.launcherBareMath
+    readonly property alias notificationRules: config.notificationRules
     readonly property alias dockRunning: config.dockRunning
     readonly property alias dockEverywhere: config.dockEverywhere
     readonly property alias dockAutohide: config.dockAutohide
@@ -1059,6 +1060,9 @@ Singleton {
         // Work out a sum typed without the calculator's prefix, as the
         // first row of the list.
         property bool launcherBareMath: false
+        // Per application, by the name it notifies as: "mute", "silent" or
+        // "popup" (see `NotificationService.ruleFor`). None is the default.
+        property var notificationRules: ({})
 
         // Also show running applications that aren't pinned.
         property bool dockRunning: true
