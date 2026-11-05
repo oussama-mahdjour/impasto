@@ -104,6 +104,7 @@ EdgeDrawer {
         Level {
             glyph: AudioService.icon
             value: AudioService.volume
+            limit: AudioService.ceiling
             dimmed: AudioService.muted
             onMoved: value => AudioService.setVolume(value)
             onGlyphClicked: AudioService.toggleMute()
