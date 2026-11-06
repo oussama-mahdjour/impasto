@@ -139,6 +139,19 @@ QtObject {
     readonly property int overviewRowHeight: root.manyBlocks ? 94 : 190
     // Past this many rows the overview scrolls.
     readonly property int overviewRowsShown: root.manyBlocks ? 5 : root.overviewRows
+    // The scratchpad tiles: those of Settings → Scratchpads, then any other
+    // special workspace that has a window in it.
+    readonly property var overviewPads: {
+        const configured = Array.from(SettingsService.overviewScratchpads ?? [])
+        const known = configured.map(pad => pad.name)
+        const extra = []
+        for (const client of root.specialClients) {
+            const name = String(client.workspace?.name ?? "").replace(/^special:/, "")
+            if (name !== "" && known.indexOf(name) < 0 && extra.indexOf(name) < 0)
+                extra.push(name)
+        }
+        return configured.concat(extra.map(name => ({ name: name, label: name, glyph: "", keys: "", command: "" })))
+    }
     // Scratchpad tiles to a row under the workspaces; more go on a new row.
     readonly property int overviewPadsPerRow: 5
     readonly property int overviewPadHeight: 84

@@ -78,17 +78,12 @@ Rectangle {
     // The scratchpad tiles under the strip: a row of them and the gap before it
     // for every five.
     readonly property int overviewPadHeight: {
-        const count = (SettingsService.overviewScratchpads ?? []).length
+        const count = HyprlandService.overviewPads.length
         if (count === 0)
             return 0
         const rows = Math.ceil(count / HyprlandService.overviewPadsPerRow)
         return rows * HyprlandService.overviewPadHeight + (rows - 1) * 10 + 10
     }
-    // The overview's special strip (52) and the gap above it (10), only
-    // while it is drawn.
-    readonly property int overviewSpecialHeight:
-        HyprlandService.specialShown(root.QsWindow.window?.screen?.name ?? "") ? 54 : 0
-
     // The dashboard's height follows its tab (`DashboardPanel.heightWanted`).
     property int dashboardHeight: 560
     // The tab the dashboard opens on ("overview", "monitor", "system", "weather"), or "".
@@ -144,7 +139,7 @@ Rectangle {
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
         overview:   { width: 1560, height: 72 + root.overviewRows * HyprlandService.overviewRowHeight
-                                      + root.overviewSpecialHeight + root.overviewPadHeight }
+                                      + root.overviewPadHeight }
     })
 
     // The strip over Bluetooth, Wi-Fi and Sound (`ConnectivityTabs`): the
