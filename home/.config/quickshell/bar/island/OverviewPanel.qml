@@ -658,6 +658,12 @@ ColumnLayout {
         }
     }
 
+    // A scratchpad tile is a workspace cell's size, worked out from the width
+    // alone: the cells shrink to fit the height left over, and the tiles are
+    // part of what takes it, so sizing them from the cells would be a loop.
+    readonly property real tileWidth: Math.max(0, (board.width - (root.columns - 1) * root.gap) / root.columns)
+    readonly property real tileHeight: (root.tileWidth - 2 * board.inset) * root.aspect + 2 * board.inset
+
     // Every scratchpad: those of Settings → Scratchpads, and any other special
     // workspace with a window in it. As many to a row as `padsPerRow` allows,
     // the rest on rows below. One element for all of them: the open one is
@@ -679,8 +685,8 @@ ColumnLayout {
         Layout.fillHeight: false
         // From the left edge of the workspaces' first column.
         Layout.alignment: Qt.AlignLeft
-        Layout.leftMargin: Math.max(0, (board.width - root.columns * board.cellWidth - (root.columns - 1) * root.gap) / 2)
-        Layout.preferredHeight: root.padRows * board.cellHeight + (root.padRows - 1) * root.gap
+        Layout.leftMargin: 0
+        Layout.preferredHeight: root.padRows * root.tileHeight + (root.padRows - 1) * root.gap
         // As wide as fits, then a new row: tiles stay one size and line up
         // with the strip above and each other.
         columns: root.padColumns
@@ -705,8 +711,8 @@ ColumnLayout {
                 readonly property var shown: pad.open && pad.windows.length > 0 ? pad.windows[0] : null
                 readonly property var capture: pad.shown ? root.toplevelFor(pad.shown) : null
 
-                Layout.preferredWidth: board.cellWidth
-                Layout.preferredHeight: board.cellHeight
+                Layout.preferredWidth: root.tileWidth
+                Layout.preferredHeight: root.tileHeight
                 radius: Theme.radiusLarge
                 contentUnderBorder: true
                 color: Theme.island
