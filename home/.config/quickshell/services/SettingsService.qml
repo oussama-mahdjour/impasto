@@ -128,6 +128,7 @@ Singleton {
     readonly property alias captureShape: config.captureShape
     readonly property alias captureKind: config.captureKind
     readonly property alias captureScreens: config.captureScreens
+    readonly property alias keysTabs: config.keysTabs
     readonly property alias lensUpload: config.lensUpload
     readonly property alias controlsClock: config.controlsClock
     readonly property alias tileMenuOnLabel: config.tileMenuOnLabel
@@ -839,6 +840,9 @@ Singleton {
         // "all": the capture surface opens on every screen; "focused": on the
         // one with the keyboard.
         property string captureScreens: "focused"
+        // The key sheet in two tabs: impasto's own keys, and the ones a user's
+        // config adds.
+        property bool keysTabs: false
 
         // The control centre's lens tile uploads a region of the screen to
         // uguu.se, so it stays out of the list until this is on.
