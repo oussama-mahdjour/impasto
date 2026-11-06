@@ -663,7 +663,13 @@ ColumnLayout {
     // the rest on rows below. One element for all of them: the open one is
     // lit and shows its window, rather than a second strip appearing.
     readonly property var pads: HyprlandService.overviewPads
-    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, HyprlandService.overviewPadsPerRow))
+    // As many to a row as the workspaces above, each the size of one of their
+    // cells: the proportions of the screen, in the same columns. Worked out from
+    // the island's declared width (`overview` in DynamicIsland: 1560, less 20 a
+    // side), not from the layout, which the tiles are part of.
+    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, root.columns))
+    readonly property real tileWidth: (1520 - (root.columns - 1) * root.gap) / root.columns
+    readonly property real tileHeight: (root.tileWidth - 6) * root.aspect + 6
     readonly property int padRows: Math.ceil(root.pads.length / root.padColumns)
 
     // ── SCRATCHPAD TILES ────────────────────────────────────────────────────
@@ -673,9 +679,10 @@ ColumnLayout {
     // toggles its workspace; a window dropped on one is sent there.
     GridLayout {
         visible: root.pads.length > 0
-        Layout.fillWidth: true
+        Layout.fillWidth: false
         Layout.fillHeight: false
-        Layout.preferredHeight: root.padRows * HyprlandService.overviewPadHeight + (root.padRows - 1) * root.gap
+        Layout.alignment: Qt.AlignLeft
+        Layout.preferredHeight: root.padRows * root.tileHeight + (root.padRows - 1) * root.gap
         // As wide as fits, then a new row: tiles stay one size and line up
         // with the strip above and each other.
         columns: root.padColumns
@@ -700,9 +707,8 @@ ColumnLayout {
                 readonly property var shown: pad.open && pad.windows.length > 0 ? pad.windows[0] : null
                 readonly property var capture: pad.shown ? root.toplevelFor(pad.shown) : null
 
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.preferredHeight: HyprlandService.overviewPadHeight
+                Layout.preferredWidth: root.tileWidth
+                Layout.preferredHeight: root.tileHeight
                 radius: Theme.radiusLarge
                 contentUnderBorder: true
                 color: Theme.island
@@ -796,6 +802,8 @@ ColumnLayout {
                         }
 
                         Text {
+                            Layout.maximumWidth: Math.max(40, root.tileWidth - 70)
+                            elide: Text.ElideRight
                             text: pad.modelData.label ?? pad.modelData.name
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeSmall
