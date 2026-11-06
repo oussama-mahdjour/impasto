@@ -75,6 +75,31 @@ QtObject {
                    ...root.namedIds)
         : root.maximum
 
+    // ── OVERVIEW ────────────────────────────────────────────────────────────
+    //
+    // The workspaces the overview draws: every screen's ten, one screen after
+    // another, so a screen's overview shows the whole desk and a window can be
+    // dropped on a workspace of another screen. Shared, the one set.
+    readonly property bool manyScreens: root.perScreen && root.screenOrder.length > 1
+
+    readonly property var overviewIds: {
+        const ids = []
+        const blocks = root.manyScreens ? root.screenOrder.length : 1
+        for (let block = 0; block < blocks; block++) {
+            for (let own = 1; own <= root.maximum; own++)
+                ids.push(block * 10 + own)
+        }
+        return ids
+    }
+
+    // A row per screen, ten wide, when there are several: five wide and two
+    // tall for each of three would not fit a screen.
+    readonly property int overviewColumns: root.manyScreens ? 10 : Math.min(5, root.maximum)
+    readonly property int overviewRows: Math.ceil(root.overviewIds.length / Math.max(1, root.overviewColumns))
+    readonly property int overviewRowHeight: root.manyScreens ? 112 : 190
+    // Scratchpad tiles to a row under the workspaces; more go on a new row.
+    readonly property int overviewPadsPerRow: 5
+
     // ── SUPER ───────────────────────────────────────────────────────────────
     //
     // Whether Super is down, and when it went down (0 when nothing is bound to

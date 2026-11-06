@@ -74,7 +74,16 @@ Rectangle {
     // default, so an island without a bar gets the size it asks for.
     property int roomForPanel: 100000
 
-    readonly property int overviewRows: Math.ceil(HyprlandService.maximum / 5)
+    readonly property int overviewRows: HyprlandService.overviewRows
+    // The scratchpad tiles under the strip: a row of 76 and the gap before it
+    // for every five.
+    readonly property int overviewPadHeight: {
+        const count = (SettingsService.overviewScratchpads ?? []).length
+        if (count === 0)
+            return 0
+        const rows = Math.ceil(count / HyprlandService.overviewPadsPerRow)
+        return rows * 76 + (rows - 1) * 10 + 10
+    }
     // The overview's special strip (52) and the gap above it (10), only
     // while it is drawn.
     readonly property int overviewSpecialHeight:
@@ -134,7 +143,8 @@ Rectangle {
         module:     root.moduleSize,
         // A tray item's menu, a row per entry.
         tray:       { width: TrayService.menuWidth, height: TrayService.menuHeight },
-        overview:   { width: 1560, height: 72 + root.overviewRows * 190 + root.overviewSpecialHeight }
+        overview:   { width: 1560, height: 72 + root.overviewRows * HyprlandService.overviewRowHeight
+                                      + root.overviewSpecialHeight + root.overviewPadHeight }
     })
 
     // The strip over Bluetooth, Wi-Fi and Sound (`ConnectivityTabs`): the
