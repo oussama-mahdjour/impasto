@@ -658,104 +658,11 @@ ColumnLayout {
         }
     }
 
-    // ── SPECIAL WORKSPACES ──────────────────────────────────────────────────
-    //
-    // One strip under the grid for all special workspaces, as the bar's pill
-    // treats them: the apps inside, a click to open or close it, and a drop
-    // target for sending a window there. Special workspaces are named, so the
-    // one acted on is the one open on this screen, else the first with a
-    // window in it, else the default one.
-    readonly property string openSpecial: HyprlandService.specialOn(root.screenName)
-    readonly property string specialName: (root.openSpecial
-        || HyprlandService.specialClients[0]?.workspace.name
-        || "special:special").replace(/^special:/, "")
-    readonly property var specialClasses: {
-        const classes = WindowService.distinctClasses(HyprlandService.specialClients)
-        return WindowService.pick(classes, classes[0] ?? "")
-    }
-
-    ClippingRectangle {
-        id: specialStrip
-
-        // Drawn only when there is something to show, so the overview is
-        // as it was for anyone who never uses a special workspace.
-        visible: HyprlandService.specialShown(root.screenName)
-        Layout.fillWidth: true
-        Layout.fillHeight: false
-        Layout.preferredHeight: 44
-        radius: Theme.radiusLarge
-        contentUnderBorder: true
-        color: Theme.island
-        border.color: root.openSpecial !== "" || specialDrop.containsDrag || specialMouse.containsMouse
-            ? Theme.accent : Theme.borderIn(QsWindow.window)
-        border.width: root.openSpecial !== "" || specialDrop.containsDrag ? 2 : 1
-
-        Image {
-            anchors.fill: parent
-            // The wallpaper under the card, as under a workspace's cell, so the
-            // cells, the special strip and the tiles read as one set.
-            source: WallpaperService.currentWallpaper !== ""
-                ? `file://${WallpaperService.currentWallpaper}` : ""
-            fillMode: Image.PreserveAspectCrop
-            asynchronous: true
-            sourceSize.width: 480
-            opacity: 0.3
-        }
-
-        Row {
-            anchors.centerIn: parent
-            spacing: 8
-
-            Text {
-                anchors.verticalCenter: parent.verticalCenter
-                text: Tr.t("Special")
-                font.family: Theme.fontFamily
-                font.pixelSize: Theme.fontSizeSmall
-                font.weight: Font.DemiBold
-                color: Theme.text
-            }
-
-            Repeater {
-                model: root.specialClasses
-
-                IconImage {
-                    required property string modelData
-
-                    anchors.verticalCenter: parent.verticalCenter
-                    implicitSize: 24
-                    source: WindowService.iconFor(modelData)
-                }
-            }
-        }
-
-        MouseArea {
-            id: specialMouse
-
-            anchors.fill: parent
-            hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: {
-                root.closed()
-                Hyprland.dispatch(`hl.dsp.workspace.toggle_special("${root.specialName}")`)
-            }
-        }
-
-        DropArea {
-            id: specialDrop
-
-            anchors.fill: parent
-            onDropped: dropped => {
-                if (ghost.client)
-                    HyprlandService.moveClientToNamed(ghost.client.address,
-                                                      `special:${root.specialName}`)
-                dropped.accept()
-            }
-        }
-    }
-
-    // The scratchpads of Settings → Scratchpads, as many to a row as `padsPerRow`
-    // allows, the rest on rows below.
-    readonly property var pads: Array.from(SettingsService.overviewScratchpads ?? [])
+    // Every scratchpad: those of Settings → Scratchpads, and any other special
+    // workspace with a window in it. As many to a row as `padsPerRow` allows,
+    // the rest on rows below. One element for all of them: the open one is
+    // lit and shows its window, rather than a second strip appearing.
+    readonly property var pads: HyprlandService.overviewPads
     readonly property int padColumns: Math.max(1, Math.min(root.pads.length, HyprlandService.overviewPadsPerRow))
     readonly property int padRows: Math.ceil(root.pads.length / root.padColumns)
 
@@ -787,6 +694,11 @@ ColumnLayout {
                     HyprlandService.specialClients.filter(client => client.workspace.name === pad.workspace)
                 ).slice(0, 3)
                 readonly property bool open: HyprlandService.specialOn(root.screenName) === pad.workspace
+                readonly property var windows: HyprlandService.specialClients
+                    .filter(client => client.workspace.name === pad.workspace)
+                // The window shown while the scratchpad is open.
+                readonly property var shown: pad.open && pad.windows.length > 0 ? pad.windows[0] : null
+                readonly property var capture: pad.shown ? root.toplevelFor(pad.shown) : null
 
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
@@ -797,17 +709,42 @@ ColumnLayout {
                 border.color: pad.open || padDrop.containsDrag || padMouse.containsMouse
                     ? Theme.accent : Theme.borderIn(QsWindow.window)
                 border.width: pad.open || padDrop.containsDrag ? 2 : 1
+                // The open scratchpad is lifted: a little larger and above its
+                // neighbours.
+                scale: pad.open ? 1.04 : 1
+                z: pad.open ? 2 : 0
+
+                Behavior on scale {
+                    NumberAnimation { duration: Theme.durationFast; easing.type: Theme.easing }
+                }
 
                 Image {
                     anchors.fill: parent
                     // The wallpaper under the card, as under a workspace's cell, so the
-                    // cells, the special strip and the tiles read as one set.
+                    // cells and the tiles read as one set.
                     source: WallpaperService.currentWallpaper !== ""
                         ? `file://${WallpaperService.currentWallpaper}` : ""
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     sourceSize.width: 480
-                    opacity: 0.3
+                    // Clearer while open: the wallpaper comes up.
+                    opacity: pad.open ? 0.6 : 0.3
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: Theme.durationFast }
+                    }
+                }
+
+                // The open scratchpad's window, live, as large as the tile
+                // lets it be at the window's own proportions.
+                ScreencopyView {
+                    visible: pad.capture !== null
+                    anchors.centerIn: parent
+                    height: parent.height
+                    width: pad.shown ? Math.min(parent.width, parent.height * pad.shown.size[0] / Math.max(1, pad.shown.size[1])) : 0
+                    captureSource: pad.capture
+                    live: true
+                    paintCursor: false
                 }
 
                 // The accent washes a tile a window is dragged over.
@@ -817,8 +754,24 @@ ColumnLayout {
                     opacity: padDrop.containsDrag ? 1 : 0
                 }
 
+                // Behind the name once it is in the corner, over the window.
+                Rectangle {
+                    visible: pad.capture !== null
+                    x: labelColumn.x - 6
+                    y: labelColumn.y - 3
+                    width: labelColumn.width + 12
+                    height: labelColumn.height + 6
+                    radius: height / 2
+                    color: Qt.alpha(Theme.island, 0.82)
+                }
+
                 ColumnLayout {
-                    anchors.centerIn: parent
+                    id: labelColumn
+
+                    // With the window showing, the name steps aside to the corner.
+                    anchors.centerIn: pad.capture === null ? parent : undefined
+                    x: 14
+                    y: 9
                     spacing: 2
 
                     RowLayout {
@@ -853,7 +806,7 @@ ColumnLayout {
 
                     Text {
                         Layout.alignment: Qt.AlignHCenter
-                        visible: text !== ""
+                        visible: text !== "" && pad.capture === null
                         text: pad.modelData.keys ?? ""
                         font.family: Theme.fontMono
                         font.pixelSize: Theme.fontSizeLabel
