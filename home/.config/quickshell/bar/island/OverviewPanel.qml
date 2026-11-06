@@ -32,10 +32,11 @@ ColumnLayout {
     signal closed()
 
     // Every workspace up to the maximum, not only those with a dot on the bar;
-    // per screen, this screen's own.
-    readonly property int count: HyprlandService.maximum
-    readonly property int columns: Math.min(5, root.count)
-    readonly property int rows: Math.ceil(root.count / root.columns)
+    // per screen, every screen's.
+    readonly property var ids: HyprlandService.overviewIds
+    readonly property int count: root.ids.length
+    readonly property int columns: HyprlandService.overviewColumns
+    readonly property int rows: HyprlandService.overviewRows
     readonly property int gap: 10
 
     // The screen this panel is on. It decides the shape of a cell; what a cell
@@ -110,8 +111,8 @@ ColumnLayout {
     // That also keeps a short last row in range, since the count need not
     // divide by the column count.
     function selectBy(delta: int): void {
-        const own = root.selectedId - root.base
-        root.selectedId = root.base + (own - 1 + delta + root.count) % root.count + 1
+        const at = Math.max(0, root.ids.indexOf(root.selectedId))
+        root.selectedId = root.ids[(at + delta + root.count) % root.count]
     }
 
     function activate(): void {
@@ -134,8 +135,7 @@ ColumnLayout {
         HyprlandService.loadClients()
         HyprlandService.loadMonitors()
         void ToplevelManager.toplevels
-        root.selectedId = root.base + Math.min(Math.max(1, root.activeId - root.base),
-                                               root.count)
+        root.selectedId = root.ids.indexOf(root.activeId) >= 0 ? root.activeId : root.ids[0]
         root.forceActiveFocus()
     }
 
@@ -201,7 +201,7 @@ ColumnLayout {
 
                     required property int index
 
-                    readonly property int workspaceId: root.base + cell.index + 1
+                    readonly property int workspaceId: root.ids[cell.index]
                     readonly property bool focused: root.activeId === cell.workspaceId
                     readonly property bool selected: root.selectedId === cell.workspaceId
                     readonly property var windows: HyprlandService.clientsOn(cell.workspaceId)
@@ -455,13 +455,38 @@ ColumnLayout {
                         }
                     }
 
+                    // Which screen a row of workspaces belongs to, on its first
+                    // cell, when there is more than one.
+                    Rectangle {
+                        visible: HyprlandService.manyScreens && cell.index % 10 === 0
+                        x: 6
+                        y: 6
+                        z: 6
+                        width: chipText.implicitWidth + 12
+                        height: 18
+                        radius: height / 2
+                        color: Qt.alpha(Theme.island, 0.85)
+                        border.color: Theme.islandBorder
+                        border.width: 1
+
+                        Text {
+                            id: chipText
+
+                            anchors.centerIn: parent
+                            text: HyprlandService.screenOrder[Math.floor(cell.index / 10)] ?? ""
+                            font.family: Theme.fontMono
+                            font.pixelSize: Theme.fontSizeLabel
+                            color: Theme.textMuted
+                        }
+                    }
+
                     // The workspace number, only on empty cells; occupied ones
                     // are recognised by their windows. Hidden under the
                     // pointer. Opacity rather than `visible`, so it fades in
                     // when a cell empties.
                     Text {
                         anchors.centerIn: parent
-                        text: cell.index + 1
+                        text: HyprlandService.perScreen ? ((cell.workspaceId - 1) % 10) + 1 : cell.workspaceId
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.round(cell.height * 0.44)
                         font.weight: Font.DemiBold
@@ -675,20 +700,30 @@ ColumnLayout {
         }
     }
 
+    // The scratchpads of Settings → Scratchpads, as many to a row as `padsPerRow`
+    // allows, the rest on rows below.
+    readonly property var pads: Array.from(SettingsService.overviewScratchpads ?? [])
+    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, HyprlandService.overviewPadsPerRow))
+    readonly property int padRows: Math.ceil(root.pads.length / root.padColumns)
+
     // ── SCRATCHPAD TILES ────────────────────────────────────────────────────
     //
     // `overviewScratchpads`: one tile per scratchpad under the strip, each
     // with its apps and the key that opens it. A click runs its command or
     // toggles its workspace; a window dropped on one is sent there.
-    RowLayout {
-        visible: (SettingsService.overviewScratchpads ?? []).length > 0
+    GridLayout {
+        visible: root.pads.length > 0
         Layout.fillWidth: true
         Layout.fillHeight: false
-        Layout.preferredHeight: 76
-        spacing: root.gap
+        Layout.preferredHeight: root.padRows * 76 + (root.padRows - 1) * root.gap
+        // As wide as fits, then a new row: tiles stay one size and line up
+        // with the strip above and each other.
+        columns: root.padColumns
+        rowSpacing: root.gap
+        columnSpacing: root.gap
 
         Repeater {
-            model: Array.from(SettingsService.overviewScratchpads ?? [])
+            model: root.pads
 
             Rectangle {
                 id: pad
@@ -701,6 +736,7 @@ ColumnLayout {
                 readonly property bool open: HyprlandService.specialOn(root.screenName) === pad.workspace
 
                 Layout.fillWidth: true
+                Layout.preferredWidth: 1
                 Layout.fillHeight: true
                 radius: Theme.radiusLarge
                 color: padDrop.containsDrag ? Qt.alpha(Theme.accent, 0.25)
