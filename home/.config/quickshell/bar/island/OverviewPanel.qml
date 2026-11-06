@@ -526,7 +526,7 @@ ColumnLayout {
                     // when a cell empties.
                     Text {
                         anchors.centerIn: parent
-                        text: cell.workspaceId
+                        text: HyprlandService.numberOn(cell.workspaceId, HyprlandService.overviewBlocks[Math.floor(cell.index / 10)]?.screen ?? "")
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.round(cell.height * 0.44)
                         font.weight: Font.DemiBold
