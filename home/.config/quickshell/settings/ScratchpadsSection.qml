@@ -113,7 +113,7 @@ SettingsSection {
 
                 readonly property string clashWith: ShortcutService.spell(card.modelData.keys) === ""
                     ? "" : ShortcutService.clash(ShortcutService.spell(card.modelData.keys),
-                                                  `Workspaces · Scratchpad ${card.modelData.label || card.modelData.name}`)
+                                                  `Scratchpad: ${card.modelData.label || card.modelData.name}`)
 
                 label: Tr.t("Key")
                 reading: keysField.clashWith !== ""

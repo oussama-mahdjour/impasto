@@ -443,7 +443,7 @@ do
             if name and combination ~= "" then
                 hl.unbind(combination)
                 hl.bind(combination, function() toggle_scratchpad(name, command) end,
-                        { description = "Workspaces · Scratchpad " .. (label ~= "" and label or name) })
+                        { description = "Scratchpad: " .. (label ~= "" and label or name) })
             end
         end
         file:close()
