@@ -81,8 +81,8 @@ Rectangle {
         const count = HyprlandService.overviewPads.length
         if (count === 0)
             return 0
-        const rows = Math.ceil(count / HyprlandService.overviewColumns)
-        return rows * HyprlandService.overviewRowHeight + 10
+        const rows = Math.ceil(count / HyprlandService.overviewPadsPerRow)
+        return rows * HyprlandService.overviewPadHeight + (rows - 1) * 10 + 10
     }
     // The dashboard's height follows its tab (`DashboardPanel.heightWanted`).
     property int dashboardHeight: 560

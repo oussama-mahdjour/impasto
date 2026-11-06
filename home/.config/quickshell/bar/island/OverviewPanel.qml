@@ -658,20 +658,12 @@ ColumnLayout {
         }
     }
 
-    // A scratchpad tile is a workspace cell's size, worked out from the width
-    // alone: the cells shrink to fit the height left over, and the tiles are
-    // part of what takes it, so sizing them from the cells would be a loop.
-    readonly property real tileWidth: Math.max(0, (board.width - (root.columns - 1) * root.gap) / root.columns)
-    readonly property real tileHeight: (root.tileWidth - 2 * board.inset) * root.aspect + 2 * board.inset
-
     // Every scratchpad: those of Settings → Scratchpads, and any other special
     // workspace with a window in it. As many to a row as `padsPerRow` allows,
     // the rest on rows below. One element for all of them: the open one is
     // lit and shows its window, rather than a second strip appearing.
     readonly property var pads: HyprlandService.overviewPads
-    // As many to a row as the workspaces above have, each the size of one of
-    // their cells: the same proportions as the screen, lined up with them.
-    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, root.columns))
+    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, HyprlandService.overviewPadsPerRow))
     readonly property int padRows: Math.ceil(root.pads.length / root.padColumns)
 
     // ── SCRATCHPAD TILES ────────────────────────────────────────────────────
@@ -681,12 +673,9 @@ ColumnLayout {
     // toggles its workspace; a window dropped on one is sent there.
     GridLayout {
         visible: root.pads.length > 0
-        Layout.fillWidth: false
+        Layout.fillWidth: true
         Layout.fillHeight: false
-        // From the left edge of the workspaces' first column.
-        Layout.alignment: Qt.AlignLeft
-        Layout.leftMargin: 0
-        Layout.preferredHeight: root.padRows * root.tileHeight + (root.padRows - 1) * root.gap
+        Layout.preferredHeight: root.padRows * HyprlandService.overviewPadHeight + (root.padRows - 1) * root.gap
         // As wide as fits, then a new row: tiles stay one size and line up
         // with the strip above and each other.
         columns: root.padColumns
@@ -711,8 +700,9 @@ ColumnLayout {
                 readonly property var shown: pad.open && pad.windows.length > 0 ? pad.windows[0] : null
                 readonly property var capture: pad.shown ? root.toplevelFor(pad.shown) : null
 
-                Layout.preferredWidth: root.tileWidth
-                Layout.preferredHeight: root.tileHeight
+                Layout.fillWidth: true
+                Layout.preferredWidth: 1
+                Layout.preferredHeight: HyprlandService.overviewPadHeight
                 radius: Theme.radiusLarge
                 contentUnderBorder: true
                 color: Theme.island
@@ -806,8 +796,6 @@ ColumnLayout {
                         }
 
                         Text {
-                            Layout.maximumWidth: pad.width - 2 * 14 - (pad.capture === null ? 30 : 36)
-                            elide: Text.ElideRight
                             text: pad.modelData.label ?? pad.modelData.name
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeSmall
