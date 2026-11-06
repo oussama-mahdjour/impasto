@@ -34,7 +34,8 @@ SettingsSection {
         { id: "imv", label: "imv" }, { id: "gtk", label: "GTK" },
         { id: "qt", label: "Qt and KDE" }, { id: "vesktop", label: "Vesktop" },
         { id: "spotify", label: "Spotify" }, { id: "vscodium", label: "VSCodium" },
-        { id: "zen", label: "Zen" }, { id: "nautilus", label: "Nautilus" }
+        { id: "zen", label: "Zen" }, { id: "nautilus", label: "Nautilus" },
+        { id: "tmux", label: "tmux" }
     ]
 
     function themeTargetOn(id: string): bool {
