@@ -663,7 +663,9 @@ ColumnLayout {
     // the rest on rows below. One element for all of them: the open one is
     // lit and shows its window, rather than a second strip appearing.
     readonly property var pads: HyprlandService.overviewPads
-    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, HyprlandService.overviewPadsPerRow))
+    // As many to a row as the workspaces above have, each the size of one of
+    // their cells: the same proportions as the screen, lined up with them.
+    readonly property int padColumns: Math.max(1, Math.min(root.pads.length, root.columns))
     readonly property int padRows: Math.ceil(root.pads.length / root.padColumns)
 
     // ── SCRATCHPAD TILES ────────────────────────────────────────────────────
@@ -673,9 +675,12 @@ ColumnLayout {
     // toggles its workspace; a window dropped on one is sent there.
     GridLayout {
         visible: root.pads.length > 0
-        Layout.fillWidth: true
+        Layout.fillWidth: false
         Layout.fillHeight: false
-        Layout.preferredHeight: root.padRows * HyprlandService.overviewPadHeight + (root.padRows - 1) * root.gap
+        // From the left edge of the workspaces' first column.
+        Layout.alignment: Qt.AlignLeft
+        Layout.leftMargin: Math.max(0, (board.width - root.columns * board.cellWidth - (root.columns - 1) * root.gap) / 2)
+        Layout.preferredHeight: root.padRows * board.cellHeight + (root.padRows - 1) * root.gap
         // As wide as fits, then a new row: tiles stay one size and line up
         // with the strip above and each other.
         columns: root.padColumns
@@ -700,9 +705,8 @@ ColumnLayout {
                 readonly property var shown: pad.open && pad.windows.length > 0 ? pad.windows[0] : null
                 readonly property var capture: pad.shown ? root.toplevelFor(pad.shown) : null
 
-                Layout.fillWidth: true
-                Layout.preferredWidth: 1
-                Layout.preferredHeight: HyprlandService.overviewPadHeight
+                Layout.preferredWidth: board.cellWidth
+                Layout.preferredHeight: board.cellHeight
                 radius: Theme.radiusLarge
                 contentUnderBorder: true
                 color: Theme.island
@@ -796,6 +800,8 @@ ColumnLayout {
                         }
 
                         Text {
+                            Layout.maximumWidth: pad.width - 2 * 14 - (pad.capture === null ? 30 : 36)
+                            elide: Text.ElideRight
                             text: pad.modelData.label ?? pad.modelData.name
                             font.family: Theme.fontFamily
                             font.pixelSize: Theme.fontSizeSmall
