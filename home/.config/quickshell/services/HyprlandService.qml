@@ -61,12 +61,14 @@ QtObject {
         return active > 0 ? Math.floor((active - 1) / 10) * 10 : own
     }
 
-    // The number a workspace is shown as: its own, whichever screen shows it
-    // and whichever ten that screen is on. Numbering each ten from 1 made
-    // workspace 23 read as 3, and with another screen on 20 something else
-    // read as 3 as well.
+    // The number a workspace is shown as. With `workspaceNumbers` "real" every
+    // workspace shows its own number, whichever screen shows it; by default a
+    // screen's own ten are numbered from 1 and another screen's keep their id.
     function numberOn(workspaceId: int, monitor: string): int {
-        return workspaceId
+        if (SettingsService.workspaceNumbers === "real")
+            return workspaceId
+        const own = workspaceId - root.blockOn(monitor)
+        return own >= 1 && own <= 10 ? own : workspaceId
     }
 
     // Every workspace a strip may draw on any screen: per screen, every
