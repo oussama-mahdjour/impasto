@@ -61,11 +61,12 @@ QtObject {
         return active > 0 ? Math.floor((active - 1) / 10) * 10 : own
     }
 
-    // The number a screen shows a workspace as: those of the ten it shows are
-    // numbered from 1, and another screen's keep their id.
+    // The number a workspace is shown as: its own, whichever screen shows it
+    // and whichever ten that screen is on. Numbering each ten from 1 made
+    // workspace 23 read as 3, and with another screen on 20 something else
+    // read as 3 as well.
     function numberOn(workspaceId: int, monitor: string): int {
-        const own = workspaceId - root.blockOn(monitor)
-        return own >= 1 && own <= 10 ? own : workspaceId
+        return workspaceId
     }
 
     // Every workspace a strip may draw on any screen: per screen, every
@@ -82,23 +83,65 @@ QtObject {
     // dropped on a workspace of another screen. Shared, the one set.
     readonly property bool manyScreens: root.perScreen && root.screenOrder.length > 1
 
+    // The overview's rows, each a ten: every screen's own, then a further ten
+    // for each other block of ten the screen holds a workspace in, occupied or
+    // active (a screen on 23, or with windows on 31). Shared, one block of
+    // everything.
+    //   { screen, base, label }
+    readonly property var overviewBlocks: {
+        if (!root.perScreen)
+            return [{ screen: "", base: 0, label: "" }]
+        const screens = root.screenOrder.length > 0 ? root.screenOrder : [""]
+        const owned = screens.map((name, at) => at * 10)
+        const blocks = []
+        for (let at = 0; at < screens.length; at++) {
+            const name = screens[at]
+            blocks.push({ screen: name, base: owned[at], label: name })
+            const extra = []
+            const note = id => {
+                if (!(id > 0))
+                    return
+                const base = Math.floor((id - 1) / 10) * 10
+                if (owned.indexOf(base) < 0 && extra.indexOf(base) < 0)
+                    extra.push(base)
+            }
+            for (const id of root.occupiedIds) {
+                if (root.monitorOf(id) === name)
+                    note(id)
+            }
+            note(root.activeOn(name))
+            extra.sort((left, right) => left - right)
+            for (const base of extra)
+                blocks.push({ screen: name, base: base, label: `${name} · ${base + 1}–${base + 10}` })
+        }
+        return blocks
+    }
+
     readonly property var overviewIds: {
         const ids = []
-        const blocks = root.manyScreens ? root.screenOrder.length : 1
-        for (let block = 0; block < blocks; block++) {
+        if (!root.perScreen) {
             for (let own = 1; own <= root.maximum; own++)
-                ids.push(block * 10 + own)
+                ids.push(own)
+            return ids
+        }
+        for (const block of root.overviewBlocks) {
+            for (let own = 1; own <= 10; own++)
+                ids.push(block.base + own)
         }
         return ids
     }
 
-    // A row per screen, ten wide, when there are several: five wide and two
-    // tall for each of three would not fit a screen.
-    readonly property int overviewColumns: root.manyScreens ? 10 : Math.min(5, root.maximum)
+    // A row to each block, ten wide, once there is more than one block: five
+    // wide and two tall for each would not fit a screen.
+    readonly property bool manyBlocks: root.perScreen && root.overviewBlocks.length > 1
+    readonly property int overviewColumns: root.manyBlocks ? 10 : Math.min(5, root.maximum)
     readonly property int overviewRows: Math.ceil(root.overviewIds.length / Math.max(1, root.overviewColumns))
-    readonly property int overviewRowHeight: root.manyScreens ? 112 : 190
+    readonly property int overviewRowHeight: root.manyBlocks ? 120 : 190
+    // Past this many rows the overview scrolls.
+    readonly property int overviewRowsShown: root.manyBlocks ? 4 : root.overviewRows
     // Scratchpad tiles to a row under the workspaces; more go on a new row.
     readonly property int overviewPadsPerRow: 5
+    readonly property int overviewPadHeight: 84
 
     // ── SUPER ───────────────────────────────────────────────────────────────
     //
