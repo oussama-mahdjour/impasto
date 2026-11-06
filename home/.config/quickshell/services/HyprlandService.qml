@@ -136,9 +136,9 @@ QtObject {
     readonly property bool manyBlocks: root.perScreen && root.overviewBlocks.length > 1
     readonly property int overviewColumns: root.manyBlocks ? 10 : Math.min(5, root.maximum)
     readonly property int overviewRows: Math.ceil(root.overviewIds.length / Math.max(1, root.overviewColumns))
-    readonly property int overviewRowHeight: root.manyBlocks ? 120 : 190
+    readonly property int overviewRowHeight: root.manyBlocks ? 94 : 190
     // Past this many rows the overview scrolls.
-    readonly property int overviewRowsShown: root.manyBlocks ? 4 : root.overviewRows
+    readonly property int overviewRowsShown: root.manyBlocks ? 5 : root.overviewRows
     // Scratchpad tiles to a row under the workspaces; more go on a new row.
     readonly property int overviewPadsPerRow: 5
     readonly property int overviewPadHeight: 84
