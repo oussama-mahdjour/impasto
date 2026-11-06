@@ -142,18 +142,6 @@ ColumnLayout {
         root.forceActiveFocus()
     }
 
-    // The wallpaper under a card, as under a workspace's cell, so the cells,
-    // the special strip and the scratchpad tiles read as one set.
-    component WallpaperFill: Image {
-        anchors.fill: parent
-        source: WallpaperService.currentWallpaper !== ""
-            ? `file://${WallpaperService.currentWallpaper}` : ""
-        fillMode: Image.PreserveAspectCrop
-        asynchronous: true
-        sourceSize.width: 480
-        opacity: 0.3
-    }
-
     // ── GRID ────────────────────────────────────────────────────────────────
 
     Item {
@@ -702,7 +690,17 @@ ColumnLayout {
             ? Theme.accent : Theme.borderIn(QsWindow.window)
         border.width: root.openSpecial !== "" || specialDrop.containsDrag ? 2 : 1
 
-        WallpaperFill {}
+        Image {
+            anchors.fill: parent
+            // The wallpaper under the card, as under a workspace's cell, so the
+            // cells, the special strip and the tiles read as one set.
+            source: WallpaperService.currentWallpaper !== ""
+                ? `file://${WallpaperService.currentWallpaper}` : ""
+            fillMode: Image.PreserveAspectCrop
+            asynchronous: true
+            sourceSize.width: 480
+            opacity: 0.3
+        }
 
         Row {
             anchors.centerIn: parent
@@ -800,7 +798,17 @@ ColumnLayout {
                     ? Theme.accent : Theme.borderIn(QsWindow.window)
                 border.width: pad.open || padDrop.containsDrag ? 2 : 1
 
-                WallpaperFill {}
+                Image {
+                    anchors.fill: parent
+                    // The wallpaper under the card, as under a workspace's cell, so the
+                    // cells, the special strip and the tiles read as one set.
+                    source: WallpaperService.currentWallpaper !== ""
+                        ? `file://${WallpaperService.currentWallpaper}` : ""
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    sourceSize.width: 480
+                    opacity: 0.3
+                }
 
                 // The accent washes a tile a window is dragged over.
                 Rectangle {
