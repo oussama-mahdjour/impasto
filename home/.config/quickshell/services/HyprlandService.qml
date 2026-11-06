@@ -152,10 +152,11 @@ QtObject {
         return monitor?.specialWorkspace?.name ?? ""
     }
 
-    // Whether the overview has anything to show for the special workspaces:
-    // one is open on this screen, or some window sits in one.
+    // Whether the overview shows the special strip on a screen: only the
+    // screen a special workspace is open on. Another screen's overview is
+    // about its own workspaces, whatever sits in a special one elsewhere.
     function specialShown(monitorName: string): bool {
-        return root.specialOn(monitorName) !== "" || root.specialClients.length > 0
+        return root.specialOn(monitorName) !== ""
     }
 
     // The screen a workspace is on, or "" for one nobody has made yet.
