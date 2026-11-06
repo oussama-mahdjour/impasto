@@ -145,7 +145,7 @@ EdgeDrawer {
             app: root.selected
             menu: root.menu
             edge: root.edge
-            workspaceBase: HyprlandService.baseOn(root.screen.name)
+            workspaceBase: HyprlandService.blockOn(root.screen.name)
             x: root.edge === "left" ? root.innerEdge
                 : root.edge === "right" ? root.width - root.innerEdge - popout.width
                 : root.placeAlong(root.anchorAt.x, popout.fullWidth)
