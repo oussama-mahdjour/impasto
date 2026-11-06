@@ -8,6 +8,7 @@
 // ╰──────────────────────────────────────────────────────────────────────────╯
 
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Effects
 import QtQuick.Layouts
 import Quickshell
@@ -37,6 +38,8 @@ ColumnLayout {
     readonly property int count: root.ids.length
     readonly property int columns: HyprlandService.overviewColumns
     readonly property int rows: HyprlandService.overviewRows
+    // How many rows fit before the grid scrolls.
+    readonly property int visibleRows: Math.max(1, Math.min(root.rows, HyprlandService.overviewRowsShown))
     readonly property int gap: 10
 
     // The screen this panel is on. It decides the shape of a cell; what a cell
@@ -139,6 +142,18 @@ ColumnLayout {
         root.forceActiveFocus()
     }
 
+    // The wallpaper under a card, as under a workspace's cell, so the cells,
+    // the special strip and the scratchpad tiles read as one set.
+    component WallpaperFill: Image {
+        anchors.fill: parent
+        source: WallpaperService.currentWallpaper !== ""
+            ? `file://${WallpaperService.currentWallpaper}` : ""
+        fillMode: Image.PreserveAspectCrop
+        asynchronous: true
+        sourceSize.width: 480
+        opacity: 0.3
+    }
+
     // ── GRID ────────────────────────────────────────────────────────────────
 
     Item {
@@ -158,7 +173,7 @@ ColumnLayout {
         // uneven (`inset` across, `inset * aspect` down).
         readonly property real cellWidth: Math.min(
             (width - (root.columns - 1) * root.gap) / root.columns,
-            ((height - (root.rows - 1) * root.gap) / root.rows - 2 * board.inset)
+            ((height - (root.visibleRows - 1) * root.gap) / root.visibleRows - 2 * board.inset)
                 / root.aspect + 2 * board.inset)
         readonly property real cellHeight:
             (board.cellWidth - 2 * board.inset) * root.aspect + 2 * board.inset
@@ -187,8 +202,45 @@ ColumnLayout {
             onTriggered: board.settled = true
         }
 
+        // The rows, scrolling by the wheel (or the arrows, which follow the
+        // selection) once there are more than fit.
+        Flickable {
+            id: scroller
+
+            anchors.fill: parent
+            contentWidth: width
+            contentHeight: Math.max(height, grid.height)
+            clip: true
+            interactive: grid.height > height
+            boundsBehavior: Flickable.StopAtBounds
+            flickableDirection: Flickable.VerticalFlick
+
+            ScrollBar.vertical: ScrollBar {
+                policy: grid.height > scroller.height ? ScrollBar.AlwaysOn : ScrollBar.AlwaysOff
+                width: 6
+            }
+
+            // Brings the selected cell's row into view.
+            function reveal(): void {
+                const at = Math.max(0, root.ids.indexOf(root.selectedId))
+                const top = Math.floor(at / root.columns) * (board.cellHeight + root.gap)
+                if (top < scroller.contentY)
+                    scroller.contentY = top
+                else if (top + board.cellHeight > scroller.contentY + scroller.height)
+                    scroller.contentY = top + board.cellHeight - scroller.height
+            }
+
+            Connections {
+                target: root
+
+                function onSelectedIdChanged(): void { scroller.reveal() }
+            }
+
         GridLayout {
-            anchors.centerIn: parent
+            id: grid
+
+            x: Math.max(0, (scroller.width - width) / 2)
+            y: Math.max(0, (scroller.height - height) / 2)
             columns: root.columns
             rowSpacing: root.gap
             columnSpacing: root.gap
@@ -455,10 +507,10 @@ ColumnLayout {
                         }
                     }
 
-                    // Which screen a row of workspaces belongs to, on its first
-                    // cell, when there is more than one.
+                    // Which screen a row of workspaces belongs to, and which ten it
+                    // is when the screen has more than one, on its first cell.
                     Rectangle {
-                        visible: HyprlandService.manyScreens && cell.index % 10 === 0
+                        visible: HyprlandService.manyBlocks && cell.index % 10 === 0
                         x: 6
                         y: 6
                         z: 6
@@ -473,7 +525,7 @@ ColumnLayout {
                             id: chipText
 
                             anchors.centerIn: parent
-                            text: HyprlandService.screenOrder[Math.floor(cell.index / 10)] ?? ""
+                            text: HyprlandService.overviewBlocks[Math.floor(cell.index / 10)]?.label ?? ""
                             font.family: Theme.fontMono
                             font.pixelSize: Theme.fontSizeLabel
                             color: Theme.textMuted
@@ -486,7 +538,7 @@ ColumnLayout {
                     // when a cell empties.
                     Text {
                         anchors.centerIn: parent
-                        text: HyprlandService.perScreen ? ((cell.workspaceId - 1) % 10) + 1 : cell.workspaceId
+                        text: cell.workspaceId
                         font.family: Theme.fontFamily
                         font.pixelSize: Math.round(cell.height * 0.44)
                         font.weight: Font.DemiBold
@@ -582,6 +634,7 @@ ColumnLayout {
                 }
             }
         }
+        }
 
         // ── GHOST ───────────────────────────────────────────────────────────
         //
@@ -633,7 +686,7 @@ ColumnLayout {
         return WindowService.pick(classes, classes[0] ?? "")
     }
 
-    Rectangle {
+    ClippingRectangle {
         id: specialStrip
 
         // Drawn only when there is something to show, so the overview is
@@ -641,13 +694,15 @@ ColumnLayout {
         visible: HyprlandService.specialShown(root.screenName)
         Layout.fillWidth: true
         Layout.fillHeight: false
-        Layout.preferredHeight: 52
+        Layout.preferredHeight: 44
         radius: Theme.radiusLarge
-        color: specialDrop.containsDrag ? Qt.alpha(Theme.accent, 0.25)
-            : specialMouse.containsMouse ? Theme.islandSurfaceHover : Theme.islandSurface
-        border.color: root.openSpecial !== "" || specialDrop.containsDrag
-            ? Theme.accent : "transparent"
-        border.width: 2
+        contentUnderBorder: true
+        color: Theme.island
+        border.color: root.openSpecial !== "" || specialDrop.containsDrag || specialMouse.containsMouse
+            ? Theme.accent : Theme.borderIn(QsWindow.window)
+        border.width: root.openSpecial !== "" || specialDrop.containsDrag ? 2 : 1
+
+        WallpaperFill {}
 
         Row {
             anchors.centerIn: parent
@@ -715,7 +770,7 @@ ColumnLayout {
         visible: root.pads.length > 0
         Layout.fillWidth: true
         Layout.fillHeight: false
-        Layout.preferredHeight: root.padRows * 76 + (root.padRows - 1) * root.gap
+        Layout.preferredHeight: root.padRows * HyprlandService.overviewPadHeight + (root.padRows - 1) * root.gap
         // As wide as fits, then a new row: tiles stay one size and line up
         // with the strip above and each other.
         columns: root.padColumns
@@ -725,7 +780,7 @@ ColumnLayout {
         Repeater {
             model: root.pads
 
-            Rectangle {
+            ClippingRectangle {
                 id: pad
 
                 required property var modelData
@@ -737,12 +792,22 @@ ColumnLayout {
 
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
-                Layout.fillHeight: true
+                Layout.preferredHeight: HyprlandService.overviewPadHeight
                 radius: Theme.radiusLarge
-                color: padDrop.containsDrag ? Qt.alpha(Theme.accent, 0.25)
-                    : padMouse.containsMouse ? Theme.islandSurfaceHover : Theme.islandSurface
-                border.color: pad.open || padDrop.containsDrag ? Theme.accent : "transparent"
-                border.width: 2
+                contentUnderBorder: true
+                color: Theme.island
+                border.color: pad.open || padDrop.containsDrag || padMouse.containsMouse
+                    ? Theme.accent : Theme.borderIn(QsWindow.window)
+                border.width: pad.open || padDrop.containsDrag ? 2 : 1
+
+                WallpaperFill {}
+
+                // The accent washes a tile a window is dragged over.
+                Rectangle {
+                    anchors.fill: parent
+                    color: Qt.alpha(Theme.accent, 0.25)
+                    opacity: padDrop.containsDrag ? 1 : 0
+                }
 
                 ColumnLayout {
                     anchors.centerIn: parent
@@ -755,7 +820,7 @@ ColumnLayout {
                         PadIcon {
                             visible: pad.classes.length === 0 && value !== ""
                             value: pad.modelData.glyph ?? ""
-                            size: 20
+                            size: 24
                         }
 
                         Repeater {

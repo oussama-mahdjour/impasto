@@ -74,20 +74,20 @@ Rectangle {
     // default, so an island without a bar gets the size it asks for.
     property int roomForPanel: 100000
 
-    readonly property int overviewRows: HyprlandService.overviewRows
-    // The scratchpad tiles under the strip: a row of 76 and the gap before it
+    readonly property int overviewRows: Math.max(1, Math.min(HyprlandService.overviewRows, HyprlandService.overviewRowsShown))
+    // The scratchpad tiles under the strip: a row of them and the gap before it
     // for every five.
     readonly property int overviewPadHeight: {
         const count = (SettingsService.overviewScratchpads ?? []).length
         if (count === 0)
             return 0
         const rows = Math.ceil(count / HyprlandService.overviewPadsPerRow)
-        return rows * 76 + (rows - 1) * 10 + 10
+        return rows * HyprlandService.overviewPadHeight + (rows - 1) * 10 + 10
     }
     // The overview's special strip (52) and the gap above it (10), only
     // while it is drawn.
     readonly property int overviewSpecialHeight:
-        HyprlandService.specialShown(root.QsWindow.window?.screen?.name ?? "") ? 62 : 0
+        HyprlandService.specialShown(root.QsWindow.window?.screen?.name ?? "") ? 54 : 0
 
     // The dashboard's height follows its tab (`DashboardPanel.heightWanted`).
     property int dashboardHeight: 560
