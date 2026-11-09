@@ -14,6 +14,8 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 
+import "../theme"
+
 // Keys belong to the profile: the `keys` setting maps each bind description
 // in `hypr/keybinds.lua` to a combination, so switching profile switches the
 // compositor's binds as well as the shell's.
@@ -378,13 +380,10 @@ Singleton {
         return key.startsWith("XF86") ? key.slice(4) : key
     }
 
-    // Which tab of the sheet is shown while `keysTabs` splits it.
-    property string sheetTab: "core"
-
-    // Impasto's own descriptions read `Category · Action`; what a user's
-    // config adds usually reads `Category: Action`. That is how the two are
-    // told apart, and why the second is read as a category too rather than
-    // piled under "Other".
+    // impasto's own descriptions read `Category · Action`; what a user's
+    // config adds usually reads `Category: Action`, or has no category. The
+    // separator tells the two apart, and the second form is read as a
+    // category too rather than piled under "Other".
     function sheetParts(text: string): var {
         const dot = text.indexOf(" · ")
         if (dot >= 0)
@@ -395,20 +394,19 @@ Singleton {
         return { category: "Other", action: text, origin: "custom" }
     }
 
+    // Every group, impasto's and the user's apart even when they share a
+    // category's name.
     readonly property var sheetAll: {
-        const tabs = SettingsService.keysTabs
         const groups = ({})
         const order = []
         for (const bind of HyprlandService.binds) {
             const key = bind.key || ""
             if (key === "" || key.startsWith("switch:"))
                 continue
-            const text = bind.description ?? ""
-            const parts = root.sheetParts(text)
+            const parts = root.sheetParts(bind.description ?? "")
             const category = parts.category
             const action = parts.action !== "" ? parts.action : key
-            // With tabs a category exists once for each; without, once.
-            const slot = tabs ? `${parts.origin}|${category}` : category
+            const slot = `${parts.origin}|${category}`
 
             // A trailing number or direction, which varies within a fold.
             const folded = action.match(/^(.*) (\d+|left|right|up|down)$/)
@@ -438,7 +436,7 @@ Singleton {
 
         return ranked.map(slot => ({
             name: groups[slot].name,
-            origin: tabs ? groups[slot].origin : "",
+            origin: groups[slot].origin,
             rows: groups[slot].rows.map(row => {
                 const caps = root.modifierCaps
                     .filter(modifier => row.modmask & modifier.bit)
@@ -454,8 +452,11 @@ Singleton {
         }))
     }
 
-    // What the sheet shows: all of it, or the tab's.
-    readonly property var sheet: SettingsService.keysTabs
+    // With keys of the user's own, the sheet is on two tabs, impasto's and
+    // theirs; without, it is one list and there are no tabs.
+    readonly property bool sheetTabbed: root.sheetAll.some(group => group.origin === "custom")
+    property string sheetTab: "core"
+    readonly property var sheet: root.sheetTabbed
         ? root.sheetAll.filter(group => group.origin === root.sheetTab) : root.sheetAll
 
     // Keys on each tab, for the tab labels.
@@ -463,6 +464,12 @@ Singleton {
         return root.sheetAll.filter(group => group.origin === origin)
             .reduce((sum, group) => sum + group.rows.length, 0)
     }
+
+    // The tabs, labelled with their counts.
+    readonly property var sheetTabs: [
+        { id: "core", label: `impasto · ${root.tabCount("core")}` },
+        { id: "custom", label: `${Tr.t("Yours")} · ${root.tabCount("custom")}` }
+    ]
 
     readonly property int sheetCount: root.sheet.reduce((sum, group) => sum + group.rows.length, 0)
 
@@ -477,20 +484,27 @@ Singleton {
         return words.filter(word => word !== "")
     }
 
-    // The sheet as one list, headings between groups, keeping the rows every
-    // term of `query` begins a word of. Terms split on spaces and on `+`.
-    function sheetFind(query: string): var {
+    // The groups that still have rows, keeping the rows every term of
+    // `query` begins a word of. Terms split on spaces and on `+`.
+    function sheetGroups(query: string): var {
         const terms = query.toLowerCase().split(/[\s+]+/).filter(term => term !== "")
+        return root.sheet
+            .map(group => ({
+                name: group.name,
+                rows: group.rows.filter(row => {
+                    const words = root.sheetWords(group, row)
+                    return terms.every(term => words.some(word => word.startsWith(term)))
+                })
+            }))
+            .filter(group => group.rows.length > 0)
+    }
+
+    // The same as one list, headings between groups.
+    function sheetFind(query: string): var {
         const out = []
-        for (const group of root.sheet) {
-            const rows = group.rows.filter(row => {
-                const words = root.sheetWords(group, row)
-                return terms.every(term => words.some(word => word.startsWith(term)))
-            })
-            if (rows.length === 0)
-                continue
+        for (const group of root.sheetGroups(query)) {
             out.push({ heading: true, name: group.name })
-            for (const row of rows)
+            for (const row of group.rows)
                 out.push({ heading: false, action: row.action, caps: row.caps })
         }
         return out

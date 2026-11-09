@@ -102,9 +102,9 @@ Singleton {
     readonly property alias petStyle: config.petStyle
     readonly property alias launcherResults: config.launcherResults
     readonly property alias launcherOrder: config.launcherOrder
-    readonly property alias launcherFits: config.launcherFits
     readonly property alias launcherFallbacks: config.launcherFallbacks
     readonly property alias launcherSearchUrl: config.launcherSearchUrl
+    readonly property alias launcherFits: config.launcherFits
     readonly property alias launcherDesign: config.launcherDesign
     readonly property alias launcherOnHover: config.launcherOnHover
     readonly property alias launcherPinned: config.launcherPinned
@@ -116,7 +116,6 @@ Singleton {
     readonly property alias clipboardKeep: config.clipboardKeep
     readonly property alias clipboardImages: config.clipboardImages
     readonly property alias clipboardWipeOnLock: config.clipboardWipeOnLock
-    readonly property alias lockBackground: config.lockBackground
     readonly property alias lockBlur: config.lockBlur
     readonly property alias lockClock: config.lockClock
     readonly property alias lockMusic: config.lockMusic
@@ -125,12 +124,15 @@ Singleton {
     readonly property alias userAvatar: config.userAvatar
     readonly property alias doNotDisturb: config.doNotDisturb
     readonly property alias recorderAudio: config.recorderAudio
+    readonly property alias captureNames: config.captureNames
+    // What a saved capture's name has after its time.
+    readonly property string captureSuffix: root.captureNames === "time" ? "" : "_impasto"
     readonly property alias captureShape: config.captureShape
     readonly property alias captureKind: config.captureKind
     readonly property alias captureScreens: config.captureScreens
-    readonly property alias keysTabs: config.keysTabs
     readonly property alias lensUpload: config.lensUpload
     readonly property alias controlsClock: config.controlsClock
+    readonly property alias controlsBattery: config.controlsBattery
     readonly property alias tileMenuOnLabel: config.tileMenuOnLabel
     readonly property alias updatesCheckMinutes: config.updatesCheckMinutes
     readonly property alias weatherRefreshMinutes: config.weatherRefreshMinutes
@@ -146,6 +148,7 @@ Singleton {
     readonly property alias workspaceExtras: config.workspaceExtras
     readonly property alias workspaceIconRules: config.workspaceIconRules
     readonly property alias overviewScratchpads: config.overviewScratchpads
+    readonly property alias workspaceApps: config.workspaceApps
     readonly property alias motionScale: config.motionScale
     readonly property alias motionCurve: config.motionCurve
     readonly property alias animationPreset: config.animationPreset
@@ -456,7 +459,7 @@ Singleton {
         "userName", "userAvatar", "language", "keyboard", "weatherPlace", "githubUser", "markets",
         "emojiTone",
         "doNotDisturb", "nightLight", "nightTemperature", "barHidden", "desktopHidden",
-        "gameMode", "powerTileProfile", "themeTargets",
+        "gameMode", "powerTileProfile", "themeTargets", "brightnessBelowFloor",
         "cameraEnabled", "cameraEffect", "cameraReactions",
         "recorderAudio", "captureShape", "captureKind", "captureScreens"
     ]
@@ -806,11 +809,6 @@ Singleton {
         // (`clipboard.py`).
         property bool clipboardWipeOnLock: false
 
-        // What the lock blurs: "live", a capture of the screen as it was, or
-        // "wallpaper", which shows nothing that was open. A wallpaper that
-        // cannot be read falls back to "live".
-        property string lockBackground: "live"
-
         // Enough to make text unreadable, no more.
         property int lockBlur: 32
 
@@ -819,8 +817,9 @@ Singleton {
         property string lockClock: "stacked"
 
         // What is playing on the lock: "lyrics" (the player and its lyrics),
-        // "player" or "off"; and behind it, the "cover" blurred or the
-        // "desktop" as without music.
+        // "player" or "off". Behind the lock: the "cover" blurred while music
+        // plays and the desktop otherwise, the "desktop" (a screenshot,
+        // blurred), or the "wallpaper", so nothing that was open shows.
         property string lockMusic: "lyrics"
         property string lockMusicGround: "cover"
 
@@ -833,6 +832,9 @@ Singleton {
         property bool doNotDisturb: false
 
         property bool recorderAudio: false
+        // Saved screenshots, recordings and photos: "impasto" names them
+        // by their time and `_impasto`, "time" by their time alone.
+        property string captureNames: "impasto"
 
         // The capture surface reopens on its last shape and kind. The
         // destination is not stored: it resets to saving a file.
@@ -841,25 +843,25 @@ Singleton {
         // "all": the capture surface opens on every screen; "focused": on the
         // one with the keyboard.
         property string captureScreens: "focused"
-        // The key sheet in two tabs: impasto's own keys, and the ones a user's
-        // config adds.
-        property bool keysTabs: false
 
         // The control centre's lens tile uploads a region of the screen to
         // uguu.se, so it stays out of the list until this is on.
         property bool lensUpload: false
 
-        // The time in the middle of the control centre's top row, so it stays
-        // in view while the island is open.
-        property bool controlsClock: false
-        // A tile with a menu: the icon toggles it and the rest of the tile
-        // opens the menu, so reaching for the menu does not switch it off.
-        property bool tileMenuOnLabel: false
         // Minutes between two looks for package updates, and between two
         // readings of the weather; 0 is only when asked, from a button. The
         // defaults are the periods the shell kept before these were settings.
         property int updatesCheckMinutes: 30
         property int weatherRefreshMinutes: 15
+
+        // The time in the middle of the control centre's top row, so it stays
+        // in view while the island is open.
+        property bool controlsClock: false
+        // The battery beside it, on a machine that has one.
+        property bool controlsBattery: false
+        // A tile with a menu: the icon toggles it and the rest of the tile
+        // opens the menu, so reaching for the menu does not switch it off.
+        property bool tileMenuOnLabel: false
 
         // Note bodies in the handwriting font instead of the UI font.
         property bool notesHandwriting: true
@@ -902,6 +904,8 @@ Singleton {
         // its app the first time); empty, a click toggles the workspace. A
         // window dropped on a tile is sent there. Edit in settings.json.
         property var overviewScratchpads: []
+        // The focused workspace's applications after its mark, in any style.
+        property bool workspaceApps: false
 
         // Percentage. 100 is the designed speed; 0 disables animation.
         property int motionScale: 100
@@ -1011,9 +1015,9 @@ Singleton {
         // `ControlsService.doors`; read only as that row's default.
         property var centreButtons: null
 
-        // The top row: `{ left, right }`, session action and door ids in
-        // order. Null is the session's actions left and the doors above
-        // right; two empty sides are no row at all.
+        // The top row's buttons: `{ left, right }`, session action and door
+        // ids, read as one list, left first. Null is the session's actions
+        // and the doors above.
         property var centreTop: null
 
         // The grid's columns and rows; 0 is the default the default layout
@@ -1155,8 +1159,8 @@ Singleton {
         // leaves the house in.
         property string powerTileProfile: "power-saver"
 
-        // Past the backlight's floor a screen dims further with a dark layer
-        // over it alone (`DimLayer`, `BrightnessService`).
+        // Past the backlight's floor the picture dims further, through the
+        // gamma (`BrightnessService`, `SunsetService`).
         property bool brightnessBelowFloor: false
 
         // Closing the lid with another screen connected: `off` disables the

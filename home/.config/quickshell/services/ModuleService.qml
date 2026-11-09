@@ -47,7 +47,7 @@ Singleton {
         { id: "volume",        name: "Volume",        bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
         { id: "brightness",    name: "Brightness",    bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(1, 0) },
         { id: "network",       name: "Network",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
-        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, 154) },
+        { id: "netspeed",      name: "Network speed", bar: true,  desk: false, width: Theme.cardWidth, height: Theme.cardHeight(3, Theme.cardRowGap + 36) },
         { id: "keyboard",      name: "Keyboard layout", bar: true, desk: false, width: Theme.cardWidth, height: Theme.cardHeight(1, 0) },
         { id: "bluetooth",     name: "Bluetooth",     bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(3, 0) },
         { id: "devices",       name: "Devices",       bar: true,  width: Theme.cardWidth, height: Theme.cardHeight(2, 0) },
@@ -248,7 +248,7 @@ Singleton {
     function valueOf(id: string): string {
         switch (id) {
         case "volume":
-            return AudioService.muted ? "Muted" : `${AudioService.volume}%`
+            return AudioService.muted ? Tr.t("Muted") : `${AudioService.volume}%`
         case "brightness":
             return `${BrightnessService.slider}%`
         case "battery":
@@ -266,7 +266,7 @@ Singleton {
             return `${NotificationService.history.length}`
         case "media":
             return MediaService.available
-                ? (MediaService.title || MediaService.identity || "Playing") : "Nothing playing"
+                ? (MediaService.title || MediaService.identity || Tr.t("Playing")) : Tr.t("Nothing playing")
         case "timer":
             return TimerService.running ? TimerService.display : "0:00"
         case "claude":
@@ -278,7 +278,7 @@ Singleton {
         case "stats":
             return `${StatsService.cpu.toFixed(0)}%`
         case "pet":
-            return PetService.hatched ? `Lv ${PetService.level}` : "Egg"
+            return PetService.hatched ? Tr.t("Lv %1").arg(PetService.level) : Tr.t("Egg")
         case "network":
             return NetworkService.connectionName
         case "keyboard":
@@ -288,7 +288,7 @@ Singleton {
         case "bluetooth":
             return BluetoothService.summary
         case "calendar":
-            return Qt.formatDate(root.today.date, "ddd d")
+            return Tr.date(root.today.date, "ddd d")
         }
         return ""
     }
@@ -456,7 +456,7 @@ Singleton {
         ? Math.ceil(root.timeMetrics.advanceWidth("20:48")) : 0
     readonly property int glanceTime: root.timeMetrics.font.family !== ""
         ? Math.max(root.glanceTimeBase, Math.ceil(root.timeMetrics.advanceWidth(
-            Qt.formatTime(new Date(2000, 0, 1, 20, 48, 58), SettingsService.clockFormat))))
+            Tr.date(new Date(2000, 0, 1, 20, 48, 58), SettingsService.clockFormat))))
         : 0
     readonly property FontMetrics timeMetrics: FontMetrics {
         font.family: Theme.fontFamily
@@ -505,24 +505,6 @@ Singleton {
         root.openHost = ""
     }
 
-    // How many lines the network's name takes in the speed card, which wraps it
-    // (at most three). Measured at the card's own type and inner width.
-    readonly property FontMetrics netNameMetrics: FontMetrics {
-        font.family: Theme.fontFamily
-        font.pixelSize: Theme.fontSizeRegular
-        font.weight: Font.DemiBold
-    }
-
-    // The graph block (legend, plot, time axis) and the button, in the speed
-    // card; each sits a row gap and 4 px below what is above it.
-    readonly property int netGraphHeight: 102
-    readonly property int netButtonHeight: 28
-
-    function netNameLines(): int {
-        const room = Theme.cardWidth - 2 * (Theme.cardInset + Theme.cardPadding)
-        return Math.max(1, Math.min(3, Math.ceil(root.netNameMetrics.advanceWidth(NetworkService.connectionName) / (0.9 * room))))
-    }
-
     // The catalogue size, except network and Bluetooth, which open the
     // control centre's lists, an empty notification list, which is short,
     // and the cards whose rows come and go, sized from their count.
@@ -530,13 +512,6 @@ Singleton {
         if (id === "network" || id === "bluetooth")
             return { width: 420, height: 500 }
         const item = root.entry(id)
-        // The name's lines, a line per interface, the totals and the graph.
-        if (id === "netspeed")
-            return { width: item.width,
-                     height: Theme.cardHeight(2 + Math.max(1, SystemMonitorService.addresses.length),
-                                              (Theme.cardRowGap + 4 + root.netGraphHeight)
-                                              + (Theme.cardRowGap + 4 + root.netButtonHeight)
-                                              + (root.netNameLines() - 1) * 17) }
         if (id === "keyboard")
             return { width: item.width, height: Theme.cardHeight(Math.max(1, KeyboardService.layoutList.length), 0) }
         if (id === "notifications")
@@ -652,10 +627,6 @@ Singleton {
             // Reading the layout builds the service, which asks the compositor;
             // a single layout is still a reading.
             return KeyboardService.layout !== ""
-        case "netspeed":
-            // Reading the addresses builds the service, which lists the
-            // interfaces the card is sized from.
-            return SystemMonitorService.addresses !== undefined
         case "network":
             // Disconnected is still a reading.
             return true
@@ -677,6 +648,7 @@ Singleton {
             // shows on an unconfigured machine.
             return GithubService.available
         case "stats":
+        case "netspeed":
             // The sampler runs from boot (shell.qml touches it).
             return true
         case "screentime":

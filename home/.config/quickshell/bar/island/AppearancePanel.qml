@@ -373,7 +373,7 @@ FocusScope {
 
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: card.modelData.name
+                                text: Tr.t(card.modelData.name)
                                 font.family: Theme.fontFamily
                                 font.pixelSize: Theme.fontSizeSmall
                                 font.weight: card.centred ? Font.DemiBold : Font.Normal
@@ -461,7 +461,7 @@ FocusScope {
 
             Text {
                 Layout.fillWidth: true
-                text: root.onPalette ? (root.centredPalette?.badge ?? "") : ""
+                text: root.onPalette ? Tr.t(root.centredPalette?.badge ?? "") : ""
                 elide: Text.ElideRight
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall
@@ -472,7 +472,7 @@ FocusScope {
             // applied.
             Text {
                 text: root.strip.count === 0
-                    ? (WallpaperService.scanning ? "Scanning…" : root.query !== "" ? "No match" : "")
+                    ? (WallpaperService.scanning ? Tr.t("Scanning…") : root.query !== "" ? Tr.t("No match") : "")
                     : `${root.strip.current + 1}/${root.strip.count}`
                 font.family: Theme.fontFamily
                 font.pixelSize: Theme.fontSizeSmall

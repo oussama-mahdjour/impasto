@@ -107,15 +107,15 @@ ColumnLayout {
             Text {
                 anchors.verticalCenter: parent.verticalCenter
                 visible: field.text === ""
-                text: "Find a key, or what it does…"
+                text: Tr.t("Find a key, or what it does…")
                 color: Theme.textMuted
                 font: field.font
             }
         }
 
         Text {
-            text: field.text === "" ? `${ShortcutService.sheetCount} keys`
-                : `${root.shown} of ${ShortcutService.sheetCount}`
+            text: field.text === "" ? Tr.t("%1 keys").arg(ShortcutService.sheetCount)
+                : Tr.t("%1 of %2").arg(root.shown).arg(ShortcutService.sheetCount)
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeSmall
             color: Theme.textMuted
@@ -128,14 +128,11 @@ ColumnLayout {
         color: Theme.borderIn(QsWindow.window)
     }
 
-    // Core and Custom (Settings → Keys → The key sheet).
+    // impasto's keys and the user's own, when there are any of the second.
     SegmentedControl {
-        visible: SettingsService.keysTabs
+        visible: ShortcutService.sheetTabbed
         Layout.alignment: Qt.AlignHCenter
-        options: [
-            { id: "core", label: `${Tr.t("Core")} · ${ShortcutService.tabCount("core")}` },
-            { id: "custom", label: `${Tr.t("Custom")} · ${ShortcutService.tabCount("custom")}` }
-        ]
+        options: ShortcutService.sheetTabs
         current: ShortcutService.sheetTab
         onSelected: id => {
             ShortcutService.sheetTab = id
@@ -152,7 +149,7 @@ ColumnLayout {
         Text {
             anchors.centerIn: parent
             visible: root.entries.length === 0
-            text: HyprlandService.binds.length === 0 ? "Reading the keys…" : "No key does that."
+            text: HyprlandService.binds.length === 0 ? Tr.t("Reading the keys…") : Tr.t("No key does that.")
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSizeRegular
             color: Theme.textMuted

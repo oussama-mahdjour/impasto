@@ -106,14 +106,14 @@ Item {
         id: shot
 
         anchors.fill: parent
-        // The wallpaper in place of this screen's capture when the lock is set
-        // to a private background; if it fails to draw, the plain island
-        // colour behind shows and nothing of the desktop does.
-        source: LockService.privateBackground ? LockService.privateSource
-                                              : LockService.shotSource(root.output)
+        source: LockService.shotSource(root.output)
         visible: false
         fillMode: Image.PreserveAspectCrop
-        asynchronous: false
+        // The screenshot is a small JPEG and must be there when the lock
+        // shows; a wallpaper is a large painting, decoded off the thread at
+        // the screen's size while the island's black stands in.
+        asynchronous: LockService.wallpaperSource !== ""
+        sourceSize: LockService.wallpaperSource !== "" ? Qt.size(root.width, root.height) : undefined
         cache: false
     }
 

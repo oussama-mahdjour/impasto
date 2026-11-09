@@ -49,11 +49,13 @@ PanelWindow {
     // Named for the blur behind it (`windowrules.lua`), which shows only
     // through a ground that is not solid.
     WlrLayershell.namespace: "impasto-bar"
-    // A request for root and the volume or brightness readout rise over a
-    // full-screen window, which covers the top layer; the bar goes back down
-    // once it is answered or the readout is gone.
+    // A request for root rises over a full-screen window, which covers the
+    // top layer; the bar goes back down once it is answered. So does a
+    // volume or brightness readout on a covered screen, held up until the
+    // island has slid away again, when "Readout over full-screen windows" is on.
     WlrLayershell.layer: island.state.openPanel === "auth" && island.expanded
-        || SettingsService.osdOverFullscreen && island.state.layer === island.state.layerOsd
+        || root.covered && SettingsService.osdOverFullscreen
+            && (island.state.layer === island.state.layerOsd || face.y > -2 * root.collapsedHeight)
         ? WlrLayer.Overlay : WlrLayer.Top
     // What is drawn here takes the island's glass (`Theme.surfaceIn`).
     readonly property bool glassy: true
@@ -238,8 +240,11 @@ PanelWindow {
 
     // Zen (`barHidden`): the bar waits above the screen and the island comes
     // down only for what it has to show — a panel, a notification, a
-    // transient — with the sides left up there.
-    readonly property bool zen: SettingsService.barHidden
+    // transient — with the sides left up there. A screen under a full-screen
+    // window is zen on its own, and only the readout rises over the window.
+    readonly property bool covered: !!root.screen
+        && DockService.coveredScreens.includes(` ${root.screen.name} `)
+    readonly property bool zen: SettingsService.barHidden || root.covered
     readonly property bool called: island.state.layer !== island.state.layerModules
         && island.state.layer !== island.state.layerSummary
     readonly property bool away: root.zen && !root.called
@@ -1165,6 +1170,10 @@ PanelWindow {
             peek.label = ModuleService.peekText
         }
 
+        // The value moves while the card is up: a scroll on the volume.
+        readonly property string liveText: ModuleService.peekText
+        onLiveTextChanged: if (peek.mine && peek.liveText !== "") peek.label = peek.liveText
+
         // Centred under the piece. Joined: kept on the straight part of the
         // band's lower edge, clear of its rounded ends, so the fillets meet a
         // flat line. Always: inside the bar's width.
@@ -1179,11 +1188,15 @@ PanelWindow {
             peek.maxX < peek.minX ? peek.centred : Math.max(peek.minX, Math.min(peek.maxX, peek.centred))))
         y: peek.edgeY
         width: peekText.implicitWidth + 28
-        height: peek.mine ? peek.fullHeight : 0
-        visible: peek.height > 0.5
+        // The joined tab grows out of the band; the free pill fades in where
+        // it hangs.
+        height: peek.mine || !peek.joined ? peek.fullHeight : 0
+        opacity: peek.mine || peek.joined ? 1 : 0
+        visible: peek.height > 0.5 && peek.opacity > 0.01
         clip: true
 
         Behavior on height { NumberAnimation { duration: Theme.durationFast; easing.type: Theme.easing } }
+        Behavior on opacity { NumberAnimation { duration: Theme.durationFast; easing.type: Theme.easing } }
 
         Rectangle {
             width: parent.width

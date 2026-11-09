@@ -218,18 +218,6 @@ ShellRoot {
         }
     }
 
-    // Each screen's own darkness past its backlight's floor, built only while
-    // the setting is on.
-    Variants {
-        model: SettingsService.brightnessBelowFloor ? Quickshell.screens : []
-
-        DimLayer {
-            required property var modelData
-
-            screen: modelData
-        }
-    }
-
     // The room the frame takes from the windows, on every screen. Built only
     // while the frame is always on.
     Variants {
@@ -550,22 +538,19 @@ ShellRoot {
         onPressed: root.island?.toggle("keys")
     }
 
-    // The key sheet in a window, beside the island's: a layer over the blurred
-    // desktop that exists only while it is open.
-    property bool cheatsheetWindow: false
-
-    LazyLoader {
-        active: root.cheatsheetWindow
-
-        CheatsheetLayer {
-            onDismissed: root.cheatsheetWindow = false
-        }
+    // The key sheet in a window, beside the island's.
+    KeysWindow {
+        id: keysWindow
     }
 
     GlobalShortcut {
         name: "cheatsheetWindow"
         description: "Open the cheatsheet in a window"
-        onPressed: root.cheatsheetWindow = !root.cheatsheetWindow
+        onPressed: {
+            if (!keysWindow.shown)
+                root.island?.close()
+            keysWindow.toggle()
+        }
     }
 
     GlobalShortcut {
