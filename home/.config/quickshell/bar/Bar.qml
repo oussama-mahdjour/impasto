@@ -52,11 +52,39 @@ PanelWindow {
     // A request for root rises over a full-screen window, which covers the
     // top layer; the bar goes back down once it is answered. So does a
     // volume or brightness readout on a covered screen, held up until the
-    // island has slid away again, when "Readout over full-screen windows" is on.
-    WlrLayershell.layer: island.state.openPanel === "auth" && island.expanded
-        || root.covered && SettingsService.osdOverFullscreen
-            && (island.state.layer === island.state.layerOsd || face.y > -2 * root.collapsedHeight)
+    // island has slid away again. With "Readout over full-screen windows" on,
+    // the readout rises on any screen, covered or not.
+    readonly property int wantedLayer: island.state.openPanel === "auth" && island.expanded
+        || SettingsService.osdOverFullscreen && island.state.layer === island.state.layerOsd
+        || root.covered && (island.state.layer === island.state.layerOsd
+            || island.state.layer === island.state.layerNotification
+            || face.y > -2 * root.collapsedHeight)
         ? WlrLayer.Overlay : WlrLayer.Top
+
+    // Hyprland moves a surface to another layer once and then ignores the
+    // request (0.57), so nothing would ever rise over a full-screen window.
+    // Unmapped and mapped again, the surface goes where it is asked; on a
+    // covered screen it is empty at that moment, since the island is not yet
+    // out. Elsewhere (the request for root) the layer is changed in place, as
+    // before, so an open panel is not unmapped under the user.
+    property int shownLayer: root.wantedLayer
+    WlrLayershell.layer: root.shownLayer
+
+    onWantedLayerChanged: {
+        if (!root.covered) {
+            root.shownLayer = root.wantedLayer
+            return
+        }
+        root.visible = false
+        root.shownLayer = root.wantedLayer
+        remap.restart()
+    }
+
+    Timer {
+        id: remap
+        interval: 30
+        onTriggered: root.visible = true
+    }
     // What is drawn here takes the island's glass (`Theme.surfaceIn`).
     readonly property bool glassy: true
     readonly property string groundStyle: Theme.surfaceStyle
