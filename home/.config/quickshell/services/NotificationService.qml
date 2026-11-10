@@ -126,18 +126,88 @@ Singleton {
     // notification by its id.
     function record(notification: var): var {
         const pixels = notification.image.startsWith("image://qsimage/")
+        const time = Date.now()
         return {
             id: notification.id,
             live: true,
-            time: Date.now(),
+            time: time,
             summary: notification.summary,
             body: notification.body,
             appName: notification.appName,
-            icon: notification.appIcon || notification.desktopEntry || "",
-            image: notification.image,
+            icon: root.keepPicture(notification.appIcon || notification.desktopEntry || "", `${time}-icon`),
+            image: root.keepPicture(notification.image, `${time}-image`),
             urgency: notification.urgency,
             lock: pixels ? root.retainer.createObject(root, { object: notification }) : null
         }
+    }
+
+    // ── PICTURES ────────────────────────────────────────────────────────────
+    //
+    // A sender may hand in its picture as a file it deletes soon after (a
+    // browser writes one into a temporary directory for each notification).
+    // The island draws it at once, but the history draws it again later, so
+    // the history keeps its own copy, made while the file is still there.
+    readonly property string pictureDirectory: `${SettingsService.stateDirectory}/notification-pictures`
+
+    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", root.pictureDirectory])
+
+    // The file behind a picture source, "" when it is not a file (an icon
+    // name, pixels in a hint).
+    function pictureFile(source: string): string {
+        for (const prefix of ["image://icon/", "file://", ""]) {
+            if (!source.startsWith(prefix))
+                continue
+            const rest = source.slice(prefix.length)
+            return rest.startsWith("/") ? rest : ""
+        }
+        return ""
+    }
+
+    readonly property Component pictureReader: Component {
+        FileView {
+            blockLoading: true
+            printErrors: false
+        }
+    }
+
+    readonly property Component pictureWriter: Component {
+        FileView {
+            blockWrites: true
+            preload: false
+            printErrors: false
+        }
+    }
+
+    // `source` with its file replaced by a copy in the state directory, named
+    // `stem`; `source` itself when there is no file or it cannot be read. The
+    // copy is read and written in place, not by a command, which would race
+    // the sender deleting the file.
+    function keepPicture(source: string, stem: string): string {
+        const file = root.pictureFile(source)
+        if (file === "" || file.startsWith(`${root.pictureDirectory}/`))
+            return source
+
+        const reader = root.pictureReader.createObject(root, { path: file })
+        const bytes = reader.data()
+        reader.destroy()
+        if (!bytes || bytes.byteLength === 0)
+            return source
+
+        const extension = /\.[A-Za-z0-9]+$/.test(file) ? file.slice(file.lastIndexOf(".")) : ""
+        const copy = `${root.pictureDirectory}/${stem}${extension}`
+        const writer = root.pictureWriter.createObject(root, { path: copy })
+        writer.setData(bytes)
+        writer.destroy()
+        return source.replace(file, copy)
+    }
+
+    // Removes the copies an entry owns once it leaves the history.
+    function forgetPictures(entry: var): void {
+        const copies = [entry.icon ?? "", entry.image ?? ""]
+            .map(source => root.pictureFile(source))
+            .filter(file => file.startsWith(`${root.pictureDirectory}/`))
+        if (copies.length > 0)
+            Quickshell.execDetached(["rm", "-f", ...copies])
     }
 
     // A sender's icon: the icon set's picture for it first, by the name it
@@ -153,11 +223,34 @@ Singleton {
             if (themed !== "")
                 return themed
         }
+        return root.ownPicture(named)
+    }
+
+    // A browser's notification gives its own logo, and the site it speaks for
+    // only as the first line of the body (`web.whatsapp.com`). The icon set's
+    // picture of that site, by its host, then by the host without its leading
+    // labels (`whatsapp.com`), then by its name alone (`whatsapp`); "" when the
+    // first line is not a host or the set has none.
+    function siteIcon(body: string): string {
+        const host = (body ?? "").split("\n")[0].trim().toLowerCase()
+        if (!/^([a-z0-9-]+\.)+[a-z]{2,}$/.test(host))
+            return ""
+        const labels = host.split(".")
+        const names = labels.slice(0, -1).map((label, first) => labels.slice(first).join("."))
+        names.push(labels[labels.length - 2])
+        for (const name of names) {
+            const themed = Theme.appIcon(name)
+            if (themed !== "")
+                return themed
+        }
+        return ""
+    }
+
+    // What a sender gave as a file or a URL, as a source; "" for a name.
+    function ownPicture(named: string): string {
         if (named.startsWith("/"))
             return `file://${named}`
-        if (named.includes("://"))
-            return named
-        return ""
+        return named.includes("://") ? named : ""
     }
 
     // For a sender with no icon of its own: the icon set's notifications
@@ -259,6 +352,7 @@ Singleton {
                 continue
             if (entry.lock)
                 entry.lock.destroy()
+            root.forgetPictures(entry)
             const open = root.openOf(entry)
             if (open) {
                 if (dismissed)
