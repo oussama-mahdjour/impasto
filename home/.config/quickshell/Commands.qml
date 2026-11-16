@@ -251,9 +251,10 @@ Scope {
     IpcHandler {
         target: "panel"
 
+        // The island's own panels, then the ones the user registered.
         readonly property var names: ["launcher", "controls", "overview", "appearance", "palette",
             "stats", "session", "pet", "games", "notes", "board", "keys", "packages",
-            "machines", "agenda", "servers", "screentime", "camera", "capture", "player", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"]
+            "machines", "agenda", "servers", "screentime", "camera", "capture", "player", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"].concat(UserPanels.names)
 
         function open(name: string): string {
             // "dashboard:weather" is the dashboard on that tab.
