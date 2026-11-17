@@ -50,6 +50,7 @@ Singleton {
     readonly property alias lyrics: config.lyrics
     // "card" (the piece's card) or "panel" (the wide media panel).
     readonly property alias mediaDesign: config.mediaDesign
+    readonly property alias mediaAllPlayers: config.mediaAllPlayers
     // "rectangle" or "circle", the cover's shape wherever the shell shows it. A
     // config from before the choice has only `mediaRing`, which meant circle.
     readonly property string mediaCover: config.mediaCover !== ""
@@ -741,6 +742,9 @@ Singleton {
         property string mediaCover: ""
         // What the media piece opens: its "card" or the wide "panel".
         property string mediaDesign: "card"
+        // The media panel (and the control centre card) list every player on
+        // a card of its own, instead of the one the shell shows.
+        property bool mediaAllPlayers: false
         property bool mediaRing: false
 
         // Null means `besideDefaults`.
