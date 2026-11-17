@@ -282,6 +282,18 @@ SettingsSection {
                 onSelected: id => SettingsService.set("mediaDesign", id)
             }
         }
+
+        SettingRow {
+            label: Tr.t("Every player")
+            reading: SettingsService.mediaAllPlayers
+                ? Tr.t("With several players, each has its own card and controls")
+                : Tr.t("One player at a time; the cycle key and the switcher change it")
+
+            ToggleSwitch {
+                checked: SettingsService.mediaAllPlayers
+                onToggled: checked => SettingsService.set("mediaAllPlayers", checked)
+            }
+        }
     }
 
     SettingGroup {
