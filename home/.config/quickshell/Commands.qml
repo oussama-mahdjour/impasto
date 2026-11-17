@@ -256,11 +256,13 @@ Scope {
             "stats", "session", "pet", "games", "notes", "board", "keys", "packages",
             "machines", "agenda", "servers", "screentime", "camera", "capture", "player", "wifi", "bluetooth", "sound", "microphone", "brightness", "nightlight", "power", "record"].concat(UserPanels.names)
 
+        // A second call with the panel already open closes it, as the keys do:
+        // one key or command is both the way in and the way out.
         function open(name: string): string {
             // "dashboard:weather" is the dashboard on that tab.
             if (names.indexOf(name) < 0 && !name.startsWith("dashboard:"))
                 return root.fail(`not a panel: "${name}" (${names.join(", ")})`)
-            root.island?.open(name)
+            root.island?.toggle(name)
             return root.ok({ panel: name })
         }
 
