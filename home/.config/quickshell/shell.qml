@@ -590,6 +590,18 @@ ShellRoot {
         onPressed: root.island?.toggle("player")
     }
 
+    GlobalShortcut {
+        name: "mediaCycle"
+        description: "Drive the next media player"
+        onPressed: MediaService.cycle(1)
+    }
+
+    GlobalShortcut {
+        name: "mediaCycleBack"
+        description: "Drive the previous media player"
+        onPressed: MediaService.cycle(-1)
+    }
+
     // Wi-Fi first; with connectivityTabs the other two are a tab away.
     GlobalShortcut {
         name: "connectivity"
